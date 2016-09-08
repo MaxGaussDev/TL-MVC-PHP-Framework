@@ -1,0 +1,15 @@
+<?php
+
+class DefaultController extends Controller
+{
+    public function IndexAction()
+    {
+        //load model
+        //$model = $this->loadModel('Example');
+
+        //render  view to frontend
+        $this->renderView('example/index', array("value" => "some example value to pass on to the view"));
+
+    }
+
+}

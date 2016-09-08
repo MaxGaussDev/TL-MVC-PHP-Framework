@@ -1,0 +1,318 @@
+<?php
+
+require_once 'Config.php';
+
+//default settings go here if needed
+$command = null;
+$command_action = null;
+$arguments_array = null;
+
+// unset the script filename, we don't need it
+array_splice($argv, 0, 1);
+
+// reading the command
+if(isset($argv[0])){
+    $command = $argv[0];
+}else{
+    // if no arguments are passed, show version
+    versionCmd();
+}
+
+// reading command action
+if(isset($argv[1])){
+    $command_action = $argv[1];
+}else{
+    $command_action = null;
+}
+
+array_splice($argv, 0, 1);
+array_splice($argv, 0, 1);
+
+// pass on the rest of the arguments
+if(isset($argv[0])){
+    $arguments_array = $argv;
+}else{
+    $arguments_array = null;
+}
+if(count($argv)==0){
+    $arguments_array = null;
+}
+
+//filtering commands and executing
+
+//if($command){echo "Found cmd: $command";}
+//if($command_action){echo "Found action: $command_action";}
+//if($arguments_array){echo "Found arguments:"; print_r($arguments_array);}
+//die();
+
+runCommand($command, $command_action, $arguments_array);
+
+#region INTERNAL FUNCTIONS
+
+    // run commands dynamically after cleanup
+    function runCommand($command, $action = null, $arguments = null){
+        if($command=='version'){
+            versionCmd();
+        }elseif($command=='help'){
+            helpCmd();
+        }elseif($command=='create'){
+            if($action == null){echo "Missing argument in 'command', type 'help' for more details\n"; return 0;}
+            if(count($arguments)==1){
+                if(!isset($arguments[0])){echo "Missing argument in 'command', type 'help' for more details\n"; return 0;}
+                createCmd($action, $arguments[0]);
+            }else{
+                echo "found additional arguments";
+                $name = $arguments[0];
+                $params_chk = $arguments[1];
+                array_splice($arguments, 0, 1);
+                array_splice($arguments, 0, 1);
+                createWithAdditional($action, $name, $params_chk, $arguments);
+            }
+        }elseif($command=='migrate'){
+            migrateCmd();
+        }elseif($command=='bake'){
+            bakeCmd();
+        }
+    }
+
+#endregion
+
+#region COMMAND FUNCTIONS
+
+    function bakeCmd(){
+        echo "Gathering database data \n";
+        $tables = getDBTables();
+        foreach($tables as $table){
+            $result = getTableStruct($table);
+            echo createInsertDBQuery($table, $result);
+        }
+    }
+
+    function migrateCmd(){
+        echo "Migrating database: \n";
+        $tables = getDBTables();
+
+        foreach($tables as $table){
+            $result = getTableStruct($table);
+            $fields = array();
+            foreach($result as $field_data){
+                array_push($fields, $field_data['Field']);
+            }
+            createWithAdditional('model', $table, '-p', $fields);
+        }
+    }
+
+    function versionCmd(){
+        echo " _____ _             _                   _ \n";
+        echo "|_   _(_)           | |                 | |\n";
+        echo "  | |  _ _ __  _   _| |     ___  _ __ __| |\n";
+        echo "  | | | | '_ \| | | | |    / _ \| '__/ _` |\n";
+        echo "  | | | | | | | |_| | |___| (_) | | | (_| |\n";
+        echo "  \_/ |_|_| |_|\__, \_____/\___/|_|  \__,_|\n";
+        echo "                __/ |                      \n";
+        echo "               |___/                       \n";
+        echo "\n";
+        echo "TinyLord MVC framework for php v0.5\n";
+        echo "The console is working like a charm.\n";
+        echo "Type 'help' for details...\n";
+        echo "\n";
+    }
+
+    function helpCmd(){
+        echo "TinyLord: HELP\n";
+        echo "---------------------------------------------------------------------------------------------------\n";
+        echo "Command list:\n";
+        echo "---------------------------------------------------------------------------------------------------\n";
+        echo "create \t: automatically creates files with setup\n";
+        echo "  \t: examples:\n";
+        echo "  \t: create controller <name>: creates NameController.php file in the controllers folder\n";
+        echo "  \t: create model <name> : creates Name.php file in the models folder\n";
+        echo "  \t: create model <name> -p <param1> <param2>... : creates model file with attributes and methods\n";
+        echo "  \t: create view <name> : creates a view folder with index.phtml file in the views fodler\n";
+        echo "  \t: create mvc <name> : creates model, view and the controller templates with the given name\n";
+        echo "help \t: displays all commands\n";
+        echo "migrate : imports databse structure and creates model files with attributes and methods\n";
+        echo "version : displays current framework version\n";
+        echo "\n";
+    }
+
+    function createWithAdditional($call, $name, $params_chk, $arg_array){
+        if($call=='model'){
+            $mod_name = lcfirst(str_replace('_', '', ucwords($name, "_")));
+            $m_name = ucfirst($mod_name);
+            $foldername = str_replace("processor/", "", MODELS_DIR);
+            $file_location = $foldername.$m_name.MODEL_FILE_EXTENSION;
+            if(checkfile($file_location)){
+                echo "Model file '".ucfirst($mod_name)."' already exists\n";
+            }else{
+                echo "Creating model file...\n";
+                $file = fopen($file_location, "w") or die("Unable to open file!");
+                if($params_chk == '-p'){
+                    $f_line = "<?php\n\nclass ".ucfirst($mod_name)." extends Model\n{\n\n";
+                    //get all model parameters and create protected variables
+                    foreach($arg_array as $arg_param){
+                        $f_line .="\tprotected $$arg_param;\n";
+                    }
+                    $f_line .="\n";
+                    // get all model parameters and create setter and getter methods
+                    foreach($arg_array as $par){
+                        $rel_name =lcfirst(str_replace('_', '', ucwords($par, "_")));
+                        $rel_name = ucfirst($rel_name);
+                        $arg_name = strtolower($rel_name);
+                        $f_line .="\tpublic function set$rel_name($$arg_name)\n\t{\n";
+                        $f_line .="\t\t\$this->$par = $$arg_name;\n";
+                        $f_line .="\t}\n";
+                        $f_line .="\tpublic function get$rel_name(){\n";
+                        $f_line .="\t\treturn \$this->$par;\n";
+                        $f_line .="\t}\n";
+                    }
+                    $f_line .="\n}\n";
+                }else{
+                    $f_line = "<?php\n\nclass ".ucfirst($mod_name)." extends Model\n{\n\n}\n";
+                    echo "Unknown argument '$params_chk' - please use 'help' for more details.\n";
+                }
+                fwrite($file, $f_line);
+                fclose($file);
+                echo "File created.\n";
+            }
+        }
+    }
+
+    function createCmd($call, $name){
+        if($call=='controller'){
+            $ctrl_name = ucfirst($name).CONTROLLER_SUFFIX;
+            $foldername = str_replace("processor/", "", CONTROLLERS_DIR);
+            $file_location = $foldername.$ctrl_name.CONTROLLER_FILE_EXTENSION;
+            if(checkfile($file_location)){
+                echo "Controller file '".ucfirst($name)."' already exists\n";
+            }else{
+                echo "Creating controller file...\n";
+                $file = fopen($file_location, "w") or die("Unable to open file!");
+                $f_line = "<?php\n\nclass ".ucfirst($name)."Controller extends Controller\n{\n\n}\n";
+                fwrite($file, $f_line);
+                fclose($file);
+                echo "File created.\n";
+            }
+        }elseif($call=='model'){
+            $m_name = ucfirst($name);
+            $foldername = str_replace("processor/", "", MODELS_DIR);
+            $file_location = $foldername.$m_name.MODEL_FILE_EXTENSION;
+            if(checkfile($file_location)){
+                echo "Model file '".ucfirst($name)."' already exists\n";
+            }else{
+                echo "Creating model file...\n";
+                $file = fopen($file_location, "w") or die("Unable to open file!");
+                $f_line = "<?php\n\nclass ".ucfirst($name)." extends Model\n{\n\n}\n";
+                fwrite($file, $f_line);
+                fclose($file);
+                echo "File created.\n";
+            }
+        }elseif($call=='view'){
+            $v_name = strtolower($name);
+            $foldername = str_replace("processor/", "", VIEWS_DIR);
+            $file_location = $foldername.$v_name.'/index.phtml';
+            if(checkfile($file_location)){
+                echo "View file '".$name."' already exists\n";
+            }else{
+                echo "Creating view file...\n";
+                mkdir($foldername.$v_name);
+                $file = fopen($file_location, "w") or die("Unable to open file!");
+                fclose($file);
+                echo "File created.\n";
+            }
+        }elseif($call=='mvc'){
+            createCmd('model', $name);
+            createCmd('controller', $name);
+            createCmd('view', $name);
+        }else{
+            echo "Unknown call '{$call}' in: create command. Use 'help' for more details.\n";
+        }
+    }
+
+#endregion
+
+#region HELPERS
+
+function checkfile($filename){
+    if(file_exists($filename)){
+        return true;
+    }else{
+        return false;
+    }
+}
+
+function getDBTables(){
+    require_once 'Database.php';
+    $result = Database::doQuery('show tables;');
+    $tables = array();
+    foreach($result as $tname){
+        array_push($tables, $tname['Tables_in_'.DB_MYSQL_DATABASE]);
+    }
+    return $tables;
+}
+
+function getTableStruct($table){
+    require_once 'Database.php';
+    return Database::doQuery('describe '.$table.';');
+}
+
+
+
+// DATABASE QUERY BUILDERS
+
+function createInsertDBQuery($table_name, $parameters){
+
+    $line = "\tpublic function insert()\n";
+    $line .= "\t{\n";
+    // query begin
+    $line .= "\t\t\$result = Database::doQuery(\"INSERT INTO $table_name (";
+    $cnt = 0;
+    foreach($parameters as $param){
+            if($cnt == 0){$line .= "{$param['Field']}";}
+            else{$line .= ", {$param['Field']}";}
+        $cnt++;
+    }
+    $line .= ") VALUES (";
+
+    $cnt = 0;
+    foreach($parameters as $param){
+        $num = false;
+        $val_type = strtolower($param['Type']);
+        if (strpos($val_type, 'int') !== false || strpos($val_type, 'dec') !== false || strpos($val_type, 'float') !== false || strpos($val_type, 'doub') !== false)
+            { $num = true; }
+        $par_filed_val = $param['Field'];
+        if($cnt == 0){$line .= "";} else{$line .= ", ";}
+        // handle if numeric
+        if($num == true){
+            if($param['Extra'] == 'auto_increment'){
+                $line .= "NULL";
+            }else{
+                $line .= "\$this->".$par_filed_val."";
+            }
+        }else{
+                $line .= "'{\$this->".$par_filed_val."}'";
+        }
+        $cnt++;
+    }
+    //query end
+    $line .= ");\");\n";
+    $line .= "\t}\n";
+
+    return $line;
+}
+
+function createSelectByDBQuery($name, $parameters){
+    // SELECT * FROM table_name
+}
+
+function createUpdateDBQuery($name, $parameters){
+    // UPDATE table_name SET column1=value, column2=value2,... WHERE some_column=some_value
+}
+
+function createDeleteDBQuery($name, $parameters){
+    // DELETE FROM table_name WHERE some_column = some_value
+}
+
+#endregion
+
+
