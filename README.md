@@ -94,5 +94,30 @@ $this->renderView('path/to/view/filename-without-extension', array("value" => "s
 ```
 All data passed to the view will be stored inside the "data" array.
 
+# JSON Response
+Any controller can return JSON response. 
+```
+// return json response
+$this->returnJson();
+```
+By default if no data is passed, the response is just an default response with 200 OK status code:
+```
+{
+  "status_code": 200
+}
+```
 
-So far, that's it. TL MVC does have it's own Console, more configuration options and some additional helper functions like user authorization, encryption, database mapping, file generators, etc. but these are still in development (feel free to play around with them) and some of them are not done. I will update the documentation as I continue to update the code. The whole idea was to make something bare bones and simple to build upon, but with enough flexibility. I do plan on giving it multiple database support, custom routing, ORM and REST API library in the future. 
+You can also pass arrays or objects, set a log message and status code which will be returned in the reposnse header:
+```
+$data = array(
+    "foo" => "bar",
+    "other" => array(
+        "other_data" => "some value"
+    )
+);
+$this->returnJson($data, "log message if needed", 200);
+```
+
+So far, that's it. 
+
+TL MVC does have it's own Console, more configuration options and some additional helper functions like user authorization, encryption, database mapping, file generators, etc. but these are still in development (feel free to play around with them) and some of them are not done. I will update the documentation as I continue to update the code. The whole idea was to make something bare bones and simple to build upon, but with enough flexibility. I do plan on giving it multiple database support, custom routing, ORM and REST API library in the future. 
