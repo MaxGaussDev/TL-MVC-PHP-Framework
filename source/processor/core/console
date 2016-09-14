@@ -338,7 +338,7 @@ function createSelectByDBQuery($name, $parameters){
 
 function createSelectByIdDBQuery($table_name, $parameters){
 
-    $line = "\n\tpublic function selectByIdentifier(\$identifier)\n";
+    $line = "\n\tpublic function selectById(\$identifier)\n";
     $line .= "\t{\n";
     // query begin
     $line .= "\t\t\$result = Database::doQuery(\"SELECT ";
