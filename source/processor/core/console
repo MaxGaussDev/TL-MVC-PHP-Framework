@@ -85,6 +85,9 @@ runCommand($command, $command_action, $arguments_array);
         foreach($tables as $table){
             $result = getTableStruct($table);
             echo createInsertDBQuery($table, $result);
+            echo createUpdateDBQuery($table, $result);
+            echo createDeleteDBQuery($table, $result);
+            echo createSelectByIdDBQuery($table, $result);
         }
     }
 
@@ -262,7 +265,7 @@ function getTableStruct($table){
 
 function createInsertDBQuery($table_name, $parameters){
 
-    $line = "\tpublic function insert()\n";
+    $line = "\n\tpublic function insert()\n";
     $line .= "\t{\n";
     // query begin
     $line .= "\t\t\$result = Database::doQuery(\"INSERT INTO $table_name (";
@@ -275,8 +278,11 @@ function createInsertDBQuery($table_name, $parameters){
     $line .= ") VALUES (";
 
     $cnt = 0;
+    $primary_key = null;
+
     foreach($parameters as $param){
         $num = false;
+        if($param['Key'] == 'PRI'){$primary_key = $param['Field'];}
         $val_type = strtolower($param['Type']);
         if (strpos($val_type, 'int') !== false || strpos($val_type, 'dec') !== false || strpos($val_type, 'float') !== false || strpos($val_type, 'doub') !== false)
             { $num = true; }
@@ -287,7 +293,7 @@ function createInsertDBQuery($table_name, $parameters){
             if($param['Extra'] == 'auto_increment'){
                 $line .= "NULL";
             }else{
-                $line .= "\$this->".$par_filed_val."";
+                $line .= "{\$this->".$par_filed_val."}";
             }
         }else{
                 $line .= "'{\$this->".$par_filed_val."}'";
@@ -296,21 +302,137 @@ function createInsertDBQuery($table_name, $parameters){
     }
     //query end
     $line .= ");\");\n";
+    $line .= "\t\t\$this->$primary_key = \$result;\n";
     $line .= "\t}\n";
 
     return $line;
 }
 
 function createSelectByDBQuery($name, $parameters){
-    // SELECT * FROM table_name
+    // SELECT * FROM table_name WHERE bla = bla AND bla = bla;
 }
 
-function createUpdateDBQuery($name, $parameters){
+function createSelectByIdDBQuery($table_name, $parameters){
+
+    $line = "\n\tpublic function selectByIdentifier(\$identifier)\n";
+    $line .= "\t{\n";
+    // query begin
+    $line .= "\t\t\$result = Database::doQuery(\"SELECT ";
+    $cnt = 0;
+    foreach($parameters as $param){
+        if($cnt == 0){$line .= "{$param['Field']}";}
+        else{$line .= ", {$param['Field']}";}
+        $cnt++;
+    }
+    $line .= " FROM {$table_name} WHERE ";
+    // find primary key and value
+    foreach($parameters as $param){
+        if($param['Key'] == 'PRI'){
+            $par_filed_val = $param['Field'];
+
+            $line .= "$par_filed_val = ";
+            $val_type = strtolower($param['Type']);
+            if (strpos($val_type, 'int') !== false || strpos($val_type, 'dec') !== false || strpos($val_type, 'float') !== false || strpos($val_type, 'doub') !== false)
+            {
+                $line .= "{\$identifier}";
+            }else{
+                $line .= "'{\$identifier}'";
+            }
+        }
+    }
+    //query end
+    $line .= " LIMIT 1;\");\n";
+    // result mapping begin
+    $line .= "\t\tif(is_array(\$result))\n\t\t{\n";
+    foreach($parameters as $param) {
+        $val_type = strtolower($param['Field']);
+        $line .= "\t\t\t\$this->{$val_type} = \$result[0]['{$param['Field']}'];\n";
+    }
+    // end mapping
+    $line .= "\t\t}\n";
+    // method ends here
+    $line .= "\t}\n";
+
+    return $line;
+}
+
+function createUpdateDBQuery($table_name, $parameters){
     // UPDATE table_name SET column1=value, column2=value2,... WHERE some_column=some_value
+
+    $line = "\n\tpublic function update()\n";
+    $line .= "\t{\n";
+    // query begin
+    $line .= "\t\t\$result = Database::doQuery(\"UPDATE $table_name SET ";
+
+    // find numertic and primary
+    $cnt = 0;
+    $primary_key = null;
+
+    foreach($parameters as $param){
+        if($param['Key'] != 'PRI') {
+            if ($cnt == 0) {
+                $line .= "{$param['Field']} = ";
+            } else {
+                $line .= ", {$param['Field']} = ";
+            }
+            $par_filed_val = $param['Field'];
+            $val_type = strtolower($param['Type']);
+            if (strpos($val_type, 'int') !== false || strpos($val_type, 'dec') !== false || strpos($val_type, 'float') !== false || strpos($val_type, 'doub') !== false) {
+                $line .= "{\$this->" . $par_filed_val . "}";
+            } else {
+                $line .= "'{\$this->" . $par_filed_val . "}'";
+            }
+            $cnt++;
+        }
+    }
+    $line .= " WHERE ";
+    // find primary key and value and set as where condition
+    foreach($parameters as $param){
+        if($param['Key'] == 'PRI'){
+            $par_filed_val = $param['Field'];
+            $line .= "$par_filed_val = ";
+            $val_type = strtolower($param['Type']);
+            if (strpos($val_type, 'int') !== false || strpos($val_type, 'dec') !== false || strpos($val_type, 'float') !== false || strpos($val_type, 'doub') !== false)
+            {
+                $line .= "{\$this->".$par_filed_val."}";
+            }else{
+                $line .= "'{\$this->".$par_filed_val."}'";
+            }
+        }
+    }
+    //query end
+    $line .= ";\");\n";
+    $line .= "\t}\n";
+
+    return $line;
+
 }
 
-function createDeleteDBQuery($name, $parameters){
+function createDeleteDBQuery($table_name, $parameters){
     // DELETE FROM table_name WHERE some_column = some_value
+    $line = "\n\tpublic function delete()\n";
+    $line .= "\t{\n";
+    $line .= "\t\t\$result = Database::doQuery(\"DELETE * FROM $table_name WHERE ";
+
+    // find primary key and value
+    foreach($parameters as $param){
+        if($param['Key'] == 'PRI'){
+            $par_filed_val = $param['Field'];
+
+            $line .= "$par_filed_val = ";
+            $val_type = strtolower($param['Type']);
+            if (strpos($val_type, 'int') !== false || strpos($val_type, 'dec') !== false || strpos($val_type, 'float') !== false || strpos($val_type, 'doub') !== false)
+            {
+                $line .= "{\$this->".$par_filed_val."}";
+            }else{
+                $line .= "'{\$this->".$par_filed_val."}'";
+            }
+        }
+    }
+
+    $line .= ";\");\n";
+    $line .= "\t}\n";
+    return $line;
 }
 
 #endregion

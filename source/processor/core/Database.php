@@ -25,6 +25,9 @@ class Database
                 $conn->close();
                 return $result_set;
             } else {
+                if(substr( $query, 0, 6 ) === "INSERT"){
+                    return mysqli_insert_id($conn);
+                }
                     return true;
                 }
          }
