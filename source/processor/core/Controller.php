@@ -30,4 +30,33 @@ class Controller
             }
         }
     }
+
+    protected function returnJson($data = null, $message = null, $code = 200){
+
+        http_response_code($code);
+
+        header('Content-type: application/json');
+
+        header('Access-Control-Allow-Headers : origin, content-type, accept');
+        header('Access-Control-Allow-Origin : *');
+        header('Access-Control-Allow-Methods : POST, GET');
+
+        if($data != null){
+            header('ETag : '.md5((string)$data));
+        }
+
+        $response_data = array(
+            "status_code" => $code
+        );
+
+        if($message != null){
+            $response_data['log_msg'] = $message;
+        }
+
+        if($data != null) {
+            $response_data['content'] = $data;
+        }
+
+        echo json_encode($response_data);
+    }
 }

@@ -84,10 +84,7 @@ runCommand($command, $command_action, $arguments_array);
         $tables = getDBTables();
         foreach($tables as $table){
             $result = getTableStruct($table);
-            echo createInsertDBQuery($table, $result);
-            echo createUpdateDBQuery($table, $result);
-            echo createDeleteDBQuery($table, $result);
-            echo createSelectByIdDBQuery($table, $result);
+            createWithAdditional('model', $table, '-a', $result);
         }
     }
 
@@ -126,6 +123,7 @@ runCommand($command, $command_action, $arguments_array);
         echo "---------------------------------------------------------------------------------------------------\n";
         echo "Command list:\n";
         echo "---------------------------------------------------------------------------------------------------\n";
+        echo "bake \t: maps the database and creates models with baisc CRUD methods\n";
         echo "create \t: automatically creates files with setup\n";
         echo "  \t: examples:\n";
         echo "  \t: create controller <name>: creates NameController.php file in the controllers folder\n";
@@ -170,6 +168,32 @@ runCommand($command, $command_action, $arguments_array);
                         $f_line .="\t}\n";
                     }
                     $f_line .="\n}\n";
+                }elseif($params_chk == '-a') {
+                    $f_line = "<?php\n\nclass ".ucfirst($mod_name)." extends Model\n{\n\n";
+                    //get all model parameters and create protected variables
+
+                    foreach($arg_array as $arg_param){
+                        $f_line .="\tprotected \${$arg_param['Field']};\n";
+                    }
+                    $f_line .="\n";
+                    // get all model parameters and create setter and getter methods
+                    foreach($arg_array as $par){
+                        $rel_name =lcfirst(str_replace('_', '', ucwords($par['Field'], "_")));
+                        $rel_name = ucfirst($rel_name);
+                        $arg_name = strtolower($rel_name);
+                        $f_line .="\tpublic function set$rel_name($$arg_name)\n\t{\n";
+                        $f_line .="\t\t\$this->{$par['Field']} = $$arg_name;\n";
+                        $f_line .="\t}\n";
+                        $f_line .="\tpublic function get$rel_name(){\n";
+                        $f_line .="\t\treturn \$this->{$par['Field']};\n";
+                        $f_line .="\t}\n";
+                    }
+                    // create CRUD methods
+                    $f_line .= createInsertDBQuery($name, $arg_array);
+                    $f_line .= createSelectByIdDBQuery($name, $arg_array);
+                    $f_line .= createUpdateDBQuery($name, $arg_array);
+                    $f_line .= createDeleteDBQuery($name, $arg_array);
+                    $f_line .= "\n}\n";
                 }else{
                     $f_line = "<?php\n\nclass ".ucfirst($mod_name)." extends Model\n{\n\n}\n";
                     echo "Unknown argument '$params_chk' - please use 'help' for more details.\n";
@@ -357,7 +381,6 @@ function createSelectByIdDBQuery($table_name, $parameters){
 }
 
 function createUpdateDBQuery($table_name, $parameters){
-    // UPDATE table_name SET column1=value, column2=value2,... WHERE some_column=some_value
 
     $line = "\n\tpublic function update()\n";
     $line .= "\t{\n";
@@ -409,10 +432,10 @@ function createUpdateDBQuery($table_name, $parameters){
 }
 
 function createDeleteDBQuery($table_name, $parameters){
-    // DELETE FROM table_name WHERE some_column = some_value
+
     $line = "\n\tpublic function delete()\n";
     $line .= "\t{\n";
-    $line .= "\t\t\$result = Database::doQuery(\"DELETE * FROM $table_name WHERE ";
+    $line .= "\t\t\$result = Database::doQuery(\"DELETE FROM $table_name WHERE ";
 
     // find primary key and value
     foreach($parameters as $param){
