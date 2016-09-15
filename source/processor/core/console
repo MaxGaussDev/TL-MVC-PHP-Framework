@@ -146,7 +146,7 @@ runCommand($command, $command_action, $arguments_array);
             if(checkfile($file_location)){
                 echo "Model file '".ucfirst($mod_name)."' already exists\n";
             }else{
-                echo "Creating model file...\n";
+                echo "Creating model file... {$mod_name}\n";
                 $file = fopen($file_location, "w") or die("Unable to open file!");
                 if($params_chk == '-p'){
                     $f_line = "<?php\n\nclass ".ucfirst($mod_name)." extends Model\n{\n\n";
@@ -172,27 +172,33 @@ runCommand($command, $command_action, $arguments_array);
                     $f_line = "<?php\n\nclass ".ucfirst($mod_name)." extends Model\n{\n\n";
                     //get all model parameters and create protected variables
 
+                    $f_line .="#region MODEL PARAMETERS\n\n";
                     foreach($arg_array as $arg_param){
                         $f_line .="\tprotected \${$arg_param['Field']};\n";
                     }
+                    $f_line .="\n#endregion\n";
                     $f_line .="\n";
                     // get all model parameters and create setter and getter methods
+                    $f_line .="#region GETTERS AND SETTERS\n\n";
                     foreach($arg_array as $par){
                         $rel_name =lcfirst(str_replace('_', '', ucwords($par['Field'], "_")));
                         $rel_name = ucfirst($rel_name);
                         $arg_name = strtolower($rel_name);
                         $f_line .="\tpublic function set$rel_name($$arg_name)\n\t{\n";
                         $f_line .="\t\t\$this->{$par['Field']} = $$arg_name;\n";
-                        $f_line .="\t}\n";
+                        $f_line .="\t}\n\n";
                         $f_line .="\tpublic function get$rel_name(){\n";
                         $f_line .="\t\treturn \$this->{$par['Field']};\n";
-                        $f_line .="\t}\n";
+                        $f_line .="\t}\n\n";
                     }
+                    $f_line .="\n#endregion\n\n";
                     // create CRUD methods
+                    $f_line .="#region CRUD METHODS\n";
                     $f_line .= createInsertDBQuery($name, $arg_array);
                     $f_line .= createSelectByIdDBQuery($name, $arg_array);
                     $f_line .= createUpdateDBQuery($name, $arg_array);
                     $f_line .= createDeleteDBQuery($name, $arg_array);
+                    $f_line .="\n#endregion\n";
                     $f_line .= "\n}\n";
                 }else{
                     $f_line = "<?php\n\nclass ".ucfirst($mod_name)." extends Model\n{\n\n}\n";
