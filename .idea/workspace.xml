@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="572a4e2e-1916-4d45-a90c-241d61896d47" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/source/processor/views/example/index.phtml" afterPath="$PROJECT_DIR$/source/processor/views/example/index.phtml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/source/public/css/main.css" afterPath="$PROJECT_DIR$/source/public/css/main.css" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="TL-MVC-PHP-Framework.iws" />
@@ -32,8 +31,8 @@
       <file leaf-file-name="index.phtml" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/source/processor/views/example/index.phtml">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.39893618" vertical-offset="0" max-vertical-offset="564">
-              <caret line="15" column="4" selection-start-line="15" selection-start-column="4" selection-end-line="15" selection-end-column="4" />
+            <state vertical-scroll-proportion="0.42553192" vertical-offset="0" max-vertical-offset="564">
+              <caret line="16" column="7" selection-start-line="16" selection-start-column="7" selection-end-line="16" selection-end-column="7" />
               <folding />
             </state>
           </provider>
@@ -309,8 +308,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/source/processor/views/example/index.phtml">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.39893618" vertical-offset="0" max-vertical-offset="564">
-          <caret line="15" column="4" selection-start-line="15" selection-start-column="4" selection-end-line="15" selection-end-column="4" />
+        <state vertical-scroll-proportion="0.42553192" vertical-offset="0" max-vertical-offset="564">
+          <caret line="16" column="7" selection-start-line="16" selection-start-column="7" selection-end-line="16" selection-end-column="7" />
           <folding />
         </state>
       </provider>
