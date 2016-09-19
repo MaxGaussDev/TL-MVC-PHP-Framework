@@ -2,6 +2,7 @@
 
 class DefaultController extends Controller
 {
+
     public function IndexAction()
     {
         //load model example
