@@ -16,4 +16,10 @@ class DefaultController extends Controller
 
     }
 
+    public function TestAction()
+    {
+        echo "test action in the default controller <br>";
+
+    }
+
 }

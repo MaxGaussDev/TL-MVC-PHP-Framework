@@ -343,7 +343,7 @@ function createInsertDBQuery($table_name, $parameters){
 }
 
 function createSelectByDBQuery($name, $parameters){
-    // SELECT * FROM table_name WHERE bla = bla AND bla = bla;
+    // SELECT * FROM table_name WHERE bla = bla AND bla = bla OR bla = blabla;
 }
 
 function createSelectByIdDBQuery($table_name, $parameters){
