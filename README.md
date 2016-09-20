@@ -117,7 +117,36 @@ $data = array(
 );
 $this->returnJson($data, "log message if needed", 200);
 ```
+# Routing
+By default, TinyLord will use this pattern 'http://host/controller/action/parameters' for any http call. However if you really need your own custom routes set up, go to the Config.php file in the 'core' folder, and edit this line of code:
+```
+define('AUTORESOLVE_ROUTES', true);
+```
+Set AUTORESOLVE_ROUTES to false. This will tell the bootstrap file to look for Router.php class and routes configuration. For example purposes, Router.php file has some routes already set up, for example:
 
+```
+protected $routes = array(
+        "/home" => array(
+            "controller" => "DefaultController",
+            "action" => "IndexAction"
+        ),
+        "/test" => array(
+            "controller" => "DefaultController",
+            "action" => "TestAction"
+        )
+    );
+```
+Basically, each route needs to be defined with a corresponding controller class and action method. By default this is desabled, because at the time, the router is pretty much bacis as it gets (it will not pass parameters to the controller, if you need to pass some values as arguments use $_POST method for example).
+
+# Console
+TL has a bare bones and very basic Command Line tool, to access it use:
+```
+$ cd path-to-project/source/core
+$ sudo php console help
+```
+Most of the available functions will be displayed with the help command. Tiny's console can setup project files, map MySQL database from the Config.php file and generate some core MVC files along the way. It will not rewrite exsisting MVC files if there are any.
+
+# The end, for now...
 So far, that's it. 
 
 TL MVC does have it's own Console, more configuration options and some additional helper functions like user authorization, encryption, database mapping, file generators, etc. but these are still in development (feel free to play around with them) and some of them are not done. I will update the documentation as I continue to update the code. The whole idea was to make something bare bones and simple to build upon, but with enough flexibility. I do plan on giving it multiple database support, custom routing, ORM and REST API library in the future. 
