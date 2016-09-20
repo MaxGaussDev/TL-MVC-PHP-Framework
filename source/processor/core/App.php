@@ -52,7 +52,7 @@ class App
             } else {
                 // throw error if controller file does not exist
                 if (DEV_MODE == true) {
-                    $error_msg = 'The Controller file: "' . ucfirst($route_components_array[0]) . '"' . CONTROLLER_SUFFIX . CONTROLLER_FILE_EXTENSION . '" was not found';
+                    $error_msg = 'The Controller file: "' . ucfirst($route_components_array[0]) . '' . CONTROLLER_SUFFIX . CONTROLLER_FILE_EXTENSION . '" was not found';
                     die($error_msg);
                 }
             }
@@ -63,7 +63,7 @@ class App
                 require_once ROUTES_CONFIG_FILE;
                 if (class_exists('Router')) {
                     $router = new Router();
-                    $route_components_array = $router->resolveRoute($_GET['route']);
+                    $route_components_array = $router->resolveRoute($this->parseRoute());
                     if($route_components_array != false){
                         if (file_exists(CONTROLLERS_DIR.$route_components_array['controller'].CONTROLLER_FILE_EXTENSION)){
                             $this->controller = $route_components_array['controller'];
@@ -86,7 +86,7 @@ class App
                         }
                     }else{
                         if (DEV_MODE == true) {
-                            $error_msg = 'No route found for: '.$_GET['route'];
+                            $error_msg = 'No route found for: /'.$_GET['route'];
                             die($error_msg);
                         }
                     }
@@ -110,7 +110,11 @@ class App
     protected function parseRoute()
     {
         if(isset($_GET['route'])){
-           return explode('/', filter_var(rtrim($_GET['route'], '/')), FILTER_SANITIZE_URL);
+            if(AUTORESOLVE_ROUTES == true) {
+                return explode('/', filter_var(rtrim($_GET['route'], '/')), FILTER_SANITIZE_URL);
+            }else{
+                return $_GET['route'];
+            }
         }
     }
 
