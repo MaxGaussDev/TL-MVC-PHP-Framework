@@ -4,7 +4,7 @@
 define('DEV_MODE', true);
 
 // autoresolve routes, if set to false, checks ROUTES config, otherwise checks for automatic MVC route patterns
-define('AUTORESOLVE_ROUTES', false);
+define('AUTORESOLVE_ROUTES', true);
 define('ROUTES_CONFIG_FILE', '../processor/core/Router.php');
 
 // defines if App will redirect wrong requests to default controller and action
