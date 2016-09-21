@@ -4,8 +4,8 @@
 define('DEV_MODE', true);
 
 // autoresolve routes, if set to false, checks ROUTES config, otherwise checks for automatic MVC route patterns
-define('AUTORESOLVE_ROUTES', true);
-define('ROUTES_CONFIG_FILE', '../processor/core/Router.php');
+define('AUTORESOLVE_ROUTES', false);
+define('ROUTES_CONFIG_FILE', 'processor/core/Router.php');
 
 // defines if App will redirect wrong requests to default controller and action
 define('REDIRECT_TO_DEFAULT', true);
@@ -27,13 +27,13 @@ define('DEFAULT_HASH_SALT', 'thissomesecretmagicword');
 define('DEFAULT_ACCESS_ROLE', 'anonymous');
 
 // folder structure options
-define('MODELS_DIR', '../processor/models/');
-define('CONTROLLERS_DIR', '../processor/controllers/');
-define('VIEWS_DIR', '../processor/views/');
+define('MODELS_DIR', 'processor/models/');
+define('CONTROLLERS_DIR', 'processor/controllers/');
+define('VIEWS_DIR', 'processor/views/');
 
 // database (MYSQL)
 define('DB_MYSQL_HOST', '127.0.0.1');
-define('DB_MYSQL_PORT', 8889);
+define('DB_MYSQL_PORT', 3306);
 define('DB_MYSQL_USER', 'root');
-define('DB_MYSQL_PASSWORD', 'root');
-define('DB_MYSQL_DATABASE', 'mcvtest');
+define('DB_MYSQL_PASSWORD', 'iddqdidkfa');
+define('DB_MYSQL_DATABASE', 'rpgengine');

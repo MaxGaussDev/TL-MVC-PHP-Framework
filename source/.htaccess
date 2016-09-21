@@ -1,10 +1,10 @@
 Options -MultiViews
 RewriteEngine On
 
-RewriteBase /TL-MVC-PHP-Framework/source
+RewriteBase /source
 
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-l
 
-RewriteRule ^(.+)$ public/index.php?route=$1 [QSA,L]
+RewriteRule ^(.+)$ index.php?route=$1 [QSA,L]
