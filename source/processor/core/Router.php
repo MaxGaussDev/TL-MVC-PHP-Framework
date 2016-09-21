@@ -12,6 +12,10 @@ Class Router
         "/test" => array(
             "controller" => "DefaultController",
             "action" => "TestAction"
+        ),
+        "/test/with/:parameter" => array(
+            "controller" => "DefaultController",
+            "action" => "TestAction"
         )
     );
 
@@ -20,6 +24,8 @@ Class Router
         if(isset($this->routes[$key])){
             return $this->routes[$key];
         }else{
+            //if not found immediately, perform global search
+
             return false;
         }
     }
@@ -38,12 +44,17 @@ Class Router
         unset($definition_array[0]);
         $match = true;
 
+        // if there are any parameters to be found on the way, this is where we store them
+        $params_array = array();
+
         if (count($route_array) == count($definition_array)){
-            // do other stuff, like compare values and shit
             foreach($definition_array as $def_index_val){
-                // if index_val is not optional, check if it matches with current route
+                // check for optional parameter
                 if($def_index_val[0] == ':'){
                     $index = array_search($def_index_val,$definition_array);
+                    // pass parameters if found
+                    $definition_array[$index] = ltrim($definition_array[$index], ':');
+                    $params_array[$definition_array[$index]] = $route_array[$index];
                     unset($definition_array[$index]);
                     unset($route_array[$index]);
                 }
@@ -52,7 +63,13 @@ Class Router
                 $match = false;
             }
         }else{ $match = false; }
-        if($match){ return true; }else{ return false; }
+        if($match){
+            // everything went ok
+            if(!empty($params_array)){return $params_array;}else{return true;}
+        }else{
+            // route not found
+            return false;
+        }
     }
 
 }
