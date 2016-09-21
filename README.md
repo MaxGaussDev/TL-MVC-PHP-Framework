@@ -6,13 +6,13 @@ TL is a small and bare bones MVC framework for PHP, it has a bit more than usual
 - Rewrite Mod needs to be enabled
 
 # Importing and making it work
-To import TL MVC, copy the source files into your project root directory. In the root .htaccess file edit the following line:
+To import TL MVC, copy the content of the source folder into your project root directory. In the root .htaccess file edit the following line:
 ```
 RewriteBase /TL-MVC-PHP-Framework/source
 ```
 Change RewriteBase value with the name of your project directory. Or set up .htaccess as you see fit for your own needs or project structure. The "source" directory was designed with the idea of actually being the root directory (like htdocs, or www), so renaming it with your project name won't influence the framework structure. 
 
-To test if the TL MVC is propperly set up, check the url: http://your-host/your-project-name/ (if you kept the source folder in the project structure the url should be: http://your-host/your-project-name/)
+To test if the TL MVC is propperly set up, check the url: http://your-host/your-project-name/ (if you kept the source folder in the project structure the url should be: http://your-host/your-project-name/source/)
 
 If the setup was successful you should see the following message:
 ```
@@ -166,6 +166,9 @@ $ cd path-to-project/source/core
 $ sudo php console help
 ```
 Most of the available functions will be displayed with the help command. Tiny's console can setup project files, map MySQL database from the Config.php file and generate some core MVC files along the way. It will not rewrite exsisting MVC files if there are any.
+
+# Development mode
+Development mode is enabled by default in the Config.php file. If enabled it will return error messages in the response (for example if there are no defined routes, if some MVC files are missing, some Database exceptions etc.).
 
 # The end, for now...
 So far, that's it. 
