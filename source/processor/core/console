@@ -141,7 +141,7 @@ runCommand($command, $command_action, $arguments_array);
         if($call=='model'){
             $mod_name = lcfirst(str_replace('_', '', ucwords($name, "_")));
             $m_name = ucfirst($mod_name);
-            $foldername = str_replace("processor/", "", MODELS_DIR);
+            $foldername = str_replace("processor/", "../", MODELS_DIR);
             $file_location = $foldername.$m_name.MODEL_FILE_EXTENSION;
             if(checkfile($file_location)){
                 echo "Model file '".ucfirst($mod_name)."' already exists\n";
@@ -215,7 +215,7 @@ runCommand($command, $command_action, $arguments_array);
     function createCmd($call, $name){
         if($call=='controller'){
             $ctrl_name = ucfirst($name).CONTROLLER_SUFFIX;
-            $foldername = str_replace("processor/", "", CONTROLLERS_DIR);
+            $foldername = str_replace("processor/", "../", CONTROLLERS_DIR);
             $file_location = $foldername.$ctrl_name.CONTROLLER_FILE_EXTENSION;
             if(checkfile($file_location)){
                 echo "Controller file '".ucfirst($name)."' already exists\n";
@@ -230,7 +230,7 @@ runCommand($command, $command_action, $arguments_array);
             }
         }elseif($call=='model'){
             $m_name = ucfirst($name);
-            $foldername = str_replace("processor/", "", MODELS_DIR);
+            $foldername = str_replace("processor/", "../", MODELS_DIR);
             $file_location = $foldername.$m_name.MODEL_FILE_EXTENSION;
             if(checkfile($file_location)){
                 echo "Model file '".ucfirst($name)."' already exists\n";
@@ -245,7 +245,7 @@ runCommand($command, $command_action, $arguments_array);
             }
         }elseif($call=='view'){
             $v_name = strtolower($name);
-            $foldername = str_replace("processor/", "", VIEWS_DIR);
+            $foldername = str_replace("processor/", "../", VIEWS_DIR);
             $file_location = $foldername.$v_name.'/index.phtml';
             if(checkfile($file_location)){
                 echo "View file '".$name."' already exists\n";
