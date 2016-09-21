@@ -1,46 +1,53 @@
-# TL-MVC-PHP-Framework
-Tiny Lord is small and bare bones MVC framework for PHP.
+# Tiny Lord MVC Framework for PHP
+TL is a small and bare bones MVC framework for PHP, it has a bit more than usual skeleton frameworks, but it is designed to be small and flexible, but also easy to use. 
 
 # Minimum Requirements
-- PHP v5.4 or greater
-- Rewrite Engine needs to be enabled
+- PHP v5.4+
+- Rewrite Mod needs to be enabled
 
-# Importing and Basic Setup
+# Importing and making it work
 To import TL MVC, copy the source files into your project root directory. In the root .htaccess file edit the following line:
 ```
-RewriteBase /source
+RewriteBase /TL-MVC-PHP-Framework/source
 ```
-Change "source" with the name of your project directory. Or set up .htaccess as you see fit for your own needs.
+Change RewriteBase value with the name of your project directory. Or set up .htaccess as you see fit for your own needs or project structure. The "source" directory was designed with the idea of actually being the root directory (like htdocs, or www), so renaming it with your project name won't influence the framework structure. 
 
-To set up the database go to: /processor/core/Config.php and edit the following constants per your own needs:
-```
-define('DB_MYSQL_HOST', '127.0.0.1');
-define('DB_MYSQL_PORT', 8889);
-define('DB_MYSQL_USER', 'root');
-define('DB_MYSQL_PASSWORD', 'root');
-define('DB_MYSQL_DATABASE', 'mcvtest');
-```
-To test if the TL MVC is propperly set up, check the url: http://your-host/your-project-name/default/index
+To test if the TL MVC is propperly set up, check the url: http://your-host/your-project-name/ (if you kept the source folder in the project structure the url should be: http://your-host/your-project-name/)
 
 If the setup was successful you should see the following message:
 ```
 Default view... 
 some example value to pass on to the view
 ```
-
 # Project Structure
 TL MVC is pretty much flexible about it's project structure, but there are a few mandatory rules. This is how the basic structure should look like at it's core:
 ```
-/project-name
-    /processor
-        /core
-        init.php
-        .htaccess
-    /public
-        index.php
-    .htaccess  
+.
+├── index.php
+├── .htaccess
+├── processor
+│   ├── controllers
+│   │   └── DefaultController.php
+│   ├── core
+│   │   ├── App.php
+│   │   ├── Config.php
+│   │   ├── console
+│   │   ├── Controller.php
+│   │   ├── Database.php
+│   │   ├── Model.php
+│   │   ├── Router.php
+│   │   └── Security.php
+│   ├── init.php
+│   ├── models
+│   └── views
+│       └── example
+│           └── index.phtml
+└── public
+    └── css
+        └── main.css
+
 ```
-Even though you can edit the Config.php file and alter the models, views and controllers files and folder structure, it is recommended to keep them in the "processor" directory under their default names. Your css, javascript and other public files, should be kept in the "public" folder.
+So far the only mandatory rule is to keep the "core" files and folders inside the "processor" folder along with the init.php file. You can edit the Config.php file and alter the models, views and controllers files and folder structure, it is recommended to keep them in the "processor" directory under their default names. Your css, javascript and other public files, should be kept in the "public" folder.
 
 # Working with TL MVC default structure
 
@@ -74,9 +81,43 @@ class DefaultController extends Controller
     }
 }
 ```
-Routing is generated automatically following this pattern:
+If you want TL to hadle the routing automatically, you should change the AUTORESOLVE_ROUTES to true (see Config.php):
+```
+define('AUTORESOLVE_ROUTES', true);
+```
+If enabled, routes will be handled automatically following this pattern:
 ```
 http://<your-host>/<your-project-name>/<controller-name-without-sufix>/<action-name-without-sufix>/<argument1>/<argument2>/...
+```
+
+# Custom routes
+This option is set up by default. All routes are defined in the "Router.php" file. router is a class, so if you wish, you can handle the routes configuration in a seperate file if you need to. There are a couple of examples already set up in advance to work with th DefaultController:
+```
+protected $routes = array(
+        "/" => array(
+            "controller" => "DefaultController",
+            "action" => "IndexAction"
+        ),
+        "/test" => array(
+            "controller" => "DefaultController",
+            "action" => "TestAction"
+        ),
+        "/test/with/:username/:age" => array(
+            "controller" => "DefaultController",
+            "action" => "AnotherAction"
+        )
+    );
+```
+Basically this is how you map your routes with their Controllers and actions. The keywords with ":" are dynamic and these are basically placeholders for your arguments or parameters you want to pass on to the controller. See DefaultController.php file for examples for each of these routes and how they are being handled.
+
+# Database configuration
+To set up the database go to: /processor/core/Config.php and edit the following constants per your own needs:
+```
+define('DB_MYSQL_HOST', '127.0.0.1');
+define('DB_MYSQL_PORT', 8889);
+define('DB_MYSQL_USER', 'root');
+define('DB_MYSQL_PASSWORD', 'root');
+define('DB_MYSQL_DATABASE', 'mcvtest');
 ```
 
 # Connecting to Database
@@ -117,26 +158,6 @@ $data = array(
 );
 $this->returnJson($data, "log message if needed", 200);
 ```
-# Routing
-By default, TinyLord will use this pattern 'http://host/controller/action/parameters' for any http call. However if you really need your own custom routes set up, go to the Config.php file in the 'core' folder, and edit this line of code:
-```
-define('AUTORESOLVE_ROUTES', true);
-```
-Set AUTORESOLVE_ROUTES to false. This will tell the bootstrap file to look for Router.php class and routes configuration. For example purposes, Router.php file has some routes already set up, for example:
-
-```
-protected $routes = array(
-        "/home" => array(
-            "controller" => "DefaultController",
-            "action" => "IndexAction"
-        ),
-        "/test" => array(
-            "controller" => "DefaultController",
-            "action" => "TestAction"
-        )
-    );
-```
-Basically, each route needs to be defined with a corresponding controller class and action method. By default this is desabled, because at the time, the router is pretty much bacis as it gets (it will not pass parameters to the controller, if you need to pass some values as arguments use $_POST method for example).
 
 # Console
 TL has a bare bones and very basic Command Line tool, to access it use:
@@ -149,4 +170,4 @@ Most of the available functions will be displayed with the help command. Tiny's 
 # The end, for now...
 So far, that's it. 
 
-TL MVC does have it's own Console, more configuration options and some additional helper functions like user authorization, encryption, database mapping, file generators, etc. but these are still in development (feel free to play around with them) and some of them are not done. I will update the documentation as I continue to update the code. The whole idea was to make something bare bones and simple to build upon, but with enough flexibility. I do plan on giving it multiple database support, custom routing, ORM and REST API library in the future. 
+TL MVC does have it's own Console, more configuration options and some additional helper functions like user authorization, encryption, database mapping, file generators, etc. but these are still in development (feel free to play around with them) and some of them are not done. I will update the documentation as I continue to update the code. The whole idea was to make something bare bones and simple to build upon, but with enough flexibility .
