@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="572a4e2e-1916-4d45-a90c-241d61896d47" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/source/processor/core/App.php" afterPath="$PROJECT_DIR$/source/processor/core/App.php" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/source/processor/controllers/DefaultController.php" afterPath="$PROJECT_DIR$/source/processor/controllers/DefaultController.php" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/source/processor/core/Router.php" afterPath="$PROJECT_DIR$/source/processor/core/Router.php" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="TL-MVC-PHP-Framework.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -33,27 +30,27 @@
       <file leaf-file-name="Router.php" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/source/processor/core/Router.php">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-12.791667" vertical-offset="23" max-vertical-offset="1350">
-              <caret line="22" column="37" selection-start-line="22" selection-start-column="37" selection-end-line="22" selection-end-column="37" />
+            <state vertical-scroll-proportion="-8.75" vertical-offset="0" max-vertical-offset="1350">
+              <caret line="14" column="10" selection-start-line="14" selection-start-column="10" selection-end-line="14" selection-end-column="10" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="DefaultController.php" pinned="false" current-in-tab="false">
+      <file leaf-file-name="DefaultController.php" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/source/processor/controllers/DefaultController.php">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-14.375" vertical-offset="0" max-vertical-offset="540">
-              <caret line="23" column="50" selection-start-line="23" selection-start-column="50" selection-end-line="23" selection-end-column="50" />
+            <state vertical-scroll-proportion="0.57192373" vertical-offset="0" max-vertical-offset="577">
+              <caret line="22" column="0" selection-start-line="22" selection-start-column="0" selection-end-line="22" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="App.php" pinned="false" current-in-tab="true">
+      <file leaf-file-name="App.php" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/source/processor/core/App.php">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.5319149" vertical-offset="885" max-vertical-offset="1935">
+            <state vertical-scroll-proportion="-49.375" vertical-offset="0" max-vertical-offset="1935">
               <caret line="79" column="99" selection-start-line="79" selection-start-column="99" selection-end-line="79" selection-end-column="99" />
               <folding />
             </state>
@@ -76,8 +73,8 @@
         <option value="$PROJECT_DIR$/source/.htaccess" />
         <option value="$PROJECT_DIR$/source/processor/views/example/index.phtml" />
         <option value="$PROJECT_DIR$/source/processor/core/Router.php" />
-        <option value="$PROJECT_DIR$/source/processor/controllers/DefaultController.php" />
         <option value="$PROJECT_DIR$/source/processor/core/App.php" />
+        <option value="$PROJECT_DIR$/source/processor/controllers/DefaultController.php" />
       </list>
     </option>
   </component>
@@ -629,24 +626,24 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/source/processor/core/Router.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-12.791667" vertical-offset="23" max-vertical-offset="1350">
-          <caret line="22" column="37" selection-start-line="22" selection-start-column="37" selection-end-line="22" selection-end-column="37" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/source/processor/controllers/DefaultController.php">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-14.375" vertical-offset="0" max-vertical-offset="540">
-          <caret line="23" column="50" selection-start-line="23" selection-start-column="50" selection-end-line="23" selection-end-column="50" />
+        <state vertical-scroll-proportion="-8.75" vertical-offset="0" max-vertical-offset="1350">
+          <caret line="14" column="10" selection-start-line="14" selection-start-column="10" selection-end-line="14" selection-end-column="10" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/source/processor/core/App.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.5319149" vertical-offset="885" max-vertical-offset="1935">
+        <state vertical-scroll-proportion="-49.375" vertical-offset="0" max-vertical-offset="1935">
           <caret line="79" column="99" selection-start-line="79" selection-start-column="99" selection-end-line="79" selection-end-column="99" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/source/processor/controllers/DefaultController.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.57192373" vertical-offset="0" max-vertical-offset="577">
+          <caret line="22" column="0" selection-start-line="22" selection-start-column="0" selection-end-line="22" selection-end-column="0" />
           <folding />
         </state>
       </provider>

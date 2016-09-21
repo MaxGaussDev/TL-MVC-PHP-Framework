@@ -9,10 +9,10 @@ class DefaultController extends Controller
         //$model = $this->loadModel('Example');
 
         //render  view to frontend
-        //$this->renderView('example/index', array("value" => "some example value to pass on to the view"));
+        $this->renderView('example/index', array("value" => "some example value to pass on to the view"));
 
         // return json response
-        $this->returnJson();
+        //$this->returnJson();
 
     }
 
@@ -23,9 +23,8 @@ class DefaultController extends Controller
 
     public function AnotherAction($username, $age)
     {
-        echo "Another action in the Default controller<br>Data passed:";
-        print_r($username);
-        print_r($age);
+        echo "Username: {$username} <br>";
+        echo "Username: {$age} <br>";
     }
 
 }
