@@ -13,20 +13,28 @@ Class Router
             "controller" => "DefaultController",
             "action" => "TestAction"
         ),
-        "/test/with/:parameter" => array(
+        "/test/with/:username/:age" => array(
             "controller" => "DefaultController",
-            "action" => "TestAction"
+            "action" => "AnotherAction"
         )
     );
 
     public function resolveRoute($route_string){
-        $key = '/'.$route_string;
-        if(isset($this->routes[$key])){
-            return $this->routes[$key];
+        $key_chk = '/'.$route_string;
+        if(isset($this->routes[$key_chk])){
+            return $this->routes[$key_chk];
         }else{
             //if not found immediately, perform global search
-
-            return false;
+            $match = false;
+            foreach($this->routes as $key => $val){
+                $r_chk = $this->compareRoutes($key_chk, $key);
+                if($r_chk){
+                    $match = true;
+                    if(is_array($r_chk)){$this->routes[$key]['parameters'] = $r_chk;}
+                }
+            }
+            if(!$match){return false;}
+            else{return $this->routes[$key];}
         }
     }
 

@@ -74,7 +74,10 @@ class App
                                 if (method_exists($this->controller, $route_components_array['action'])) {
                                     $this->method = $route_components_array['action'];
                                     // actually call the damn thing and pass parameters
-                                    // null for parameters for now - to be continued
+                                    if(isset($route_components_array['parameters'])){
+                                        $this->parameters = $route_components_array['parameters'];
+                                    }
+                                    // passing on the parameters with their names defined in routes
                                     call_user_func_array(array($this->controller, $this->method), $this->parameters);
                                 }
                             }else{
