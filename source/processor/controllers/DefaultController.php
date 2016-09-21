@@ -24,7 +24,7 @@ class DefaultController extends Controller
     public function AnotherAction($username, $age)
     {
         echo "Username: {$username} <br>";
-        echo "Username: {$age} <br>";
+        echo "Age: {$age} <br>";
     }
 
 }

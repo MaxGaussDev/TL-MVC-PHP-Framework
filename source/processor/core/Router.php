@@ -30,6 +30,7 @@ Class Router
                 $r_chk = $this->compareRoutes($key_chk, $key);
                 if($r_chk){
                     $match = true;
+                    // pass the parameters pulled form URI
                     if(is_array($r_chk)){$this->routes[$key]['parameters'] = $r_chk;}
                 }
             }
