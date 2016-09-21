@@ -20,6 +20,7 @@ Class Router
     );
 
     public function resolveRoute($route_string){
+        // first we check the simple routes without parameters
         $key_chk = '/'.$route_string;
         if(isset($this->routes[$key_chk])){
             return $this->routes[$key_chk];
