@@ -196,6 +196,7 @@ runCommand($command, $command_action, $arguments_array);
                     $f_line .="#region CRUD METHODS\n";
                     $f_line .= createInsertDBQuery($name, $arg_array);
                     $f_line .= createSelectByIdDBQuery($name, $arg_array);
+                    $f_line .= createSelectWhereDBQuery($name, $arg_array);
                     $f_line .= createUpdateDBQuery($name, $arg_array);
                     $f_line .= createDeleteDBQuery($name, $arg_array);
                     $f_line .="\n#endregion\n";
@@ -342,8 +343,33 @@ function createInsertDBQuery($table_name, $parameters){
     return $line;
 }
 
-function createSelectByDBQuery($name, $parameters){
-    // SELECT * FROM table_name WHERE bla = bla AND bla = bla OR bla = blabla;
+function createSelectWhereDBQuery($table_name, $parameters){
+
+    $line = "\n\tpublic function selectWhere(\$query_condition_string)\n";
+    $line .= "\t{\n";
+    // query begin
+    $line .= "\t\t\$result = Database::doQuery(\"SELECT ";
+    $cnt = 0;
+    foreach($parameters as $param){
+        if($cnt == 0){$line .= "{$param['Field']}";}
+        else{$line .= ", {$param['Field']}";}
+        $cnt++;
+    }
+    $line .= " FROM {$table_name} WHERE '{\$query_condition_string}'";
+    //query end
+    $line .= ";\");\n";
+    // result mapping begin
+    $line .= "\t\tif(is_array(\$result))\n\t\t{\n";
+    foreach($parameters as $param) {
+        $val_type = strtolower($param['Field']);
+        $line .= "\t\t\t\$this->{$val_type} = \$result[0]['{$param['Field']}'];\n";
+    }
+    // end mapping
+    $line .= "\t\t}\n";
+    // method ends here
+    $line .= "\t}\n";
+
+    return $line;
 }
 
 function createSelectByIdDBQuery($table_name, $parameters){
