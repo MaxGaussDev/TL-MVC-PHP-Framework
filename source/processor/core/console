@@ -355,7 +355,7 @@ function createSelectWhereDBQuery($table_name, $parameters){
         else{$line .= ", {$param['Field']}";}
         $cnt++;
     }
-    $line .= " FROM {$table_name} WHERE '{\$query_condition_string}'";
+    $line .= " FROM {$table_name} WHERE {\$query_condition_string}";
     //query end
     $line .= ";\");\n";
     // result mapping begin
