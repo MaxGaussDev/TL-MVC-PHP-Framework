@@ -20,6 +20,7 @@ Class Router
     );
 
     public function resolveRoute($route_string){
+        
         // first we check the simple routes without parameters
         $key_chk = '/'.$route_string;
         if(isset($this->routes[$key_chk])){
@@ -33,10 +34,10 @@ Class Router
                     $match = true;
                     // pass the parameters pulled form URI
                     if(is_array($r_chk)){$this->routes[$key]['parameters'] = $r_chk;}
+                    return $this->routes[$key];
                 }
             }
             if(!$match){return false;}
-            else{return $this->routes[$key];}
         }
     }
 
