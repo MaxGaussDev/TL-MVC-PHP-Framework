@@ -30,6 +30,15 @@ class Controller
             }
         }
     }
+	
+    // redirect to route
+    protected function redirectToRoute($route)
+    {
+        $host = $_SERVER['HTTP_HOST'];
+        $base_uri = str_replace('/index.php','',$_SERVER['SCRIPT_NAME']);
+        $redirect_uri = $host.$base_uri.$route;
+        header("Location: http://{$redirect_uri}");
+    }
 
     // return json response
     protected function returnJson($data = null, $message = null, $code = 200)

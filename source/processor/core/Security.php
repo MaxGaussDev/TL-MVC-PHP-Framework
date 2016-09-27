@@ -31,5 +31,16 @@ class Security
         }
     }
 
-
+    // flash message
+    // using session as storage
+    public static function setFlashMessage($msg_string){
+        $_SESSION['flash-msg'] = $msg_string;
+    }
+    
+    public static function showFlash(){
+        if(isset($_SESSION['flash-msg'])){
+            echo $_SESSION['flash-msg'];
+            unset($_SESSION['flash-msg']);
+        }
+    }
 }
