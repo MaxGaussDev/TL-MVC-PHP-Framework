@@ -36,4 +36,10 @@ define('DB_MYSQL_HOST', '127.0.0.1');
 define('DB_MYSQL_PORT', 8889);
 define('DB_MYSQL_USER', 'root');
 define('DB_MYSQL_PASSWORD', 'root');
-define('DB_MYSQL_DATABASE', 'name');
+define('DB_MYSQL_DATABASE', 'rpgengine');
+
+
+// console options
+
+// removes 's' at the end of the model class name
+define('AUTORESOLVE_PLURAL_NAMES', false);

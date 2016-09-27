@@ -141,6 +141,11 @@ runCommand($command, $command_action, $arguments_array);
         if($call=='model'){
             $mod_name = lcfirst(str_replace('_', '', ucwords($name, "_")));
             $m_name = ucfirst($mod_name);
+            if(AUTORESOLVE_PLURAL_NAMES == true){
+                // english only, for example DB table name: users --> Model name: User
+                // still in the testing phase
+                $m_name = rtrim($m_name, 's');
+            }
             $foldername = str_replace("processor/", "../", MODELS_DIR);
             $file_location = $foldername.$m_name.MODEL_FILE_EXTENSION;
             if(checkfile($file_location)){
@@ -170,6 +175,9 @@ runCommand($command, $command_action, $arguments_array);
                     $f_line .="\n}\n";
                 }elseif($params_chk == '-a') {
                     $f_line = "<?php\n\nclass ".ucfirst($mod_name)." extends Model\n{\n\n";
+                    if(AUTORESOLVE_PLURAL_NAMES == true){
+                        $f_line = "<?php\n\nclass ".ucfirst(rtrim($mod_name, 's'))." extends Model\n{\n\n";
+                    }
                     //get all model parameters and create protected variables
 
                     $f_line .="#region MODEL PARAMETERS\n\n";
