@@ -2,7 +2,7 @@
 TL is a small and bare bones MVC framework for PHP, it has a bit more than usual skeleton frameworks, but it is designed to be small and flexible, but also easy to use. 
 
 # Minimum Requirements
-- PHP v5.4+
+- PHP v5.4.32+
 - Rewrite Mod needs to be enabled
 
 # Importing and making it work
