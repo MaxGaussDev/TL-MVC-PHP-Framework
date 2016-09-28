@@ -2,6 +2,7 @@
 
 require_once 'Config.php';
 
+
 //default settings go here if needed
 $command = null;
 $command_action = null;
@@ -139,7 +140,7 @@ runCommand($command, $command_action, $arguments_array);
 
     function createWithAdditional($call, $name, $params_chk, $arg_array){
         if($call=='model'){
-            $mod_name = lcfirst(str_replace('_', '', ucwords($name, "_")));
+            $mod_name = lcfirst(createFunctionNameFromTableName($name));
             $m_name = ucfirst($mod_name);
             if(AUTORESOLVE_PLURAL_NAMES == true){
                 // english only, for example DB table name: users --> Model name: User
@@ -162,7 +163,7 @@ runCommand($command, $command_action, $arguments_array);
                     $f_line .="\n";
                     // get all model parameters and create setter and getter methods
                     foreach($arg_array as $par){
-                        $rel_name =lcfirst(str_replace('_', '', ucwords($par, "_")));
+                        $rel_name =lcfirst(createFunctionNameFromTableName($name));
                         $rel_name = ucfirst($rel_name);
                         $arg_name = strtolower($rel_name);
                         $f_line .="\tpublic function set$rel_name($$arg_name)\n\t{\n";
@@ -189,7 +190,7 @@ runCommand($command, $command_action, $arguments_array);
                     // get all model parameters and create setter and getter methods
                     $f_line .="#region GETTERS AND SETTERS\n\n";
                     foreach($arg_array as $par){
-                        $rel_name =lcfirst(str_replace('_', '', ucwords($par['Field'], "_")));
+                        $rel_name =lcfirst(createFunctionNameFromTableName($par['Field']));
                         $rel_name = ucfirst($rel_name);
                         $arg_name = strtolower($rel_name);
                         $f_line .="\tpublic function set$rel_name($$arg_name)\n\t{\n";
@@ -203,6 +204,7 @@ runCommand($command, $command_action, $arguments_array);
                     // create CRUD methods
                     $f_line .="#region CRUD METHODS\n";
                     $f_line .= createInsertDBQuery($name, $arg_array);
+                    $f_line .= createSelectAllDBQuery($name, $arg_array);
                     $f_line .= createSelectByIdDBQuery($name, $arg_array);
                     $f_line .= createSelectWhereDBQuery($name, $arg_array);
                     $f_line .= createUpdateDBQuery($name, $arg_array);
@@ -302,7 +304,18 @@ function getTableStruct($table){
     return Database::doQuery('describe '.$table.';');
 }
 
-
+function createFunctionNameFromTableName($name){
+    
+    // $mod_name = lcfirst(str_replace('_', '', ucwords($name, "_")));
+    // won't work on windows, so we do it this way
+    
+    $words = explode('_',strtolower($name));
+    $f_words = array();
+    foreach($words as $word){
+        array_push($f_words, ucfirst($word));
+    }
+    return implode("",$f_words);
+}
 
 // DATABASE QUERY BUILDERS
 
@@ -368,12 +381,61 @@ function createSelectWhereDBQuery($table_name, $parameters){
     $line .= ";\");\n";
     // result mapping begin
     $line .= "\t\tif(is_array(\$result))\n\t\t{\n";
+    $line .= "\t\t\t\$objects_array = array();\n";
+    $line .= "\t\t\tforeach(\$result as \$result_item){\n";
+    $object_name = ucfirst(createFunctionNameFromTableName($table_name));
+    if(AUTORESOLVE_PLURAL_NAMES == true){
+       $object_name = rtrim($object_name, 's');
+    }
+    $line .= "\t\t\t\t\$item = new {$object_name}();\n";
     foreach($parameters as $param) {
         $val_type = strtolower($param['Field']);
-        $line .= "\t\t\t\$this->{$val_type} = \$result[0]['{$param['Field']}'];\n";
+        $line .= "\t\t\t\t\$item->{$val_type} = \$result_item['{$param['Field']}'];\n";
     }
+    $line .= "\t\t\t\tarray_push(\$objects_array, \$item);\n";
+    $line .= "\t\t\t}\n";
     // end mapping
-    $line .= "\t\t}\n";
+    $line .= "\t\t\treturn \$objects_array;\n";
+    $line .= "\t\t}else{\n\t\t\treturn false;\n\t\t}\n";
+    // method ends here
+    $line .= "\t}\n";
+
+    return $line;
+}
+
+function createSelectAllDBQuery($table_name, $parameters){
+
+    $line = "\n\tpublic function getAll()\n";
+    $line .= "\t{\n";
+    // query begin
+    $line .= "\t\t\$result = Database::doQuery(\"SELECT ";
+    $cnt = 0;
+    foreach($parameters as $param){
+        if($cnt == 0){$line .= "{$param['Field']}";}
+        else{$line .= ", {$param['Field']}";}
+        $cnt++;
+    }
+    $line .= " FROM {$table_name}";
+    //query end
+    $line .= ";\");\n";
+    // result mapping begin
+    $line .= "\t\tif(is_array(\$result))\n\t\t{\n";
+    $line .= "\t\t\t\$objects_array = array();\n";
+    $line .= "\t\t\tforeach(\$result as \$result_item){\n";
+    $object_name = ucfirst(createFunctionNameFromTableName($table_name));
+    if(AUTORESOLVE_PLURAL_NAMES == true){
+       $object_name = rtrim($object_name, 's');
+    }
+    $line .= "\t\t\t\t\$item = new {$object_name}();\n";
+    foreach($parameters as $param) {
+        $val_type = strtolower($param['Field']);
+        $line .= "\t\t\t\t\$item->{$val_type} = \$result_item['{$param['Field']}'];\n";
+    }
+    $line .= "\t\t\t\tarray_push(\$objects_array, \$item);\n";
+    $line .= "\t\t\t}\n";
+    // end mapping
+    $line .= "\t\t\treturn \$objects_array;\n";
+    $line .= "\t\t}else{\n\t\t\treturn false;\n\t\t}\n";
     // method ends here
     $line .= "\t}\n";
 
