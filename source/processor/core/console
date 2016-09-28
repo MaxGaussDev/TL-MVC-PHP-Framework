@@ -393,7 +393,7 @@ function createSelectWhereDBQuery($table_name, $parameters){
     $line .= "\t\t\tforeach(\$result as \$result_item){\n";
     $object_name = ucfirst(createFunctionNameFromTableName($table_name));
     if(AUTORESOLVE_PLURAL_NAMES == true){
-       $object_name = rtrim($object_name, 's');
+       $object_name = resolvePluraNameToSingular($object_name);
     }
     $line .= "\t\t\t\t\$item = new {$object_name}();\n";
     foreach($parameters as $param) {
@@ -432,7 +432,7 @@ function createSelectAllDBQuery($table_name, $parameters){
     $line .= "\t\t\tforeach(\$result as \$result_item){\n";
     $object_name = ucfirst(createFunctionNameFromTableName($table_name));
     if(AUTORESOLVE_PLURAL_NAMES == true){
-       $object_name = rtrim($object_name, 's');
+       $object_name = resolvePluraNameToSingular($object_name);
     }
     $line .= "\t\t\t\t\$item = new {$object_name}();\n";
     foreach($parameters as $param) {
@@ -573,4 +573,3 @@ function createDeleteDBQuery($table_name, $parameters){
 }
 
 #endregion
-
