@@ -145,7 +145,7 @@ runCommand($command, $command_action, $arguments_array);
             if(AUTORESOLVE_PLURAL_NAMES == true){
                 // english only, for example DB table name: users --> Model name: User
                 // still in the testing phase
-                $m_name = rtrim($m_name, 's');
+                $m_name = resolvePluraNameToSingular($m_name);
             }
             $foldername = str_replace("processor/", "../", MODELS_DIR);
             $file_location = $foldername.$m_name.MODEL_FILE_EXTENSION;
@@ -177,7 +177,7 @@ runCommand($command, $command_action, $arguments_array);
                 }elseif($params_chk == '-a') {
                     $f_line = "<?php\n\nclass ".ucfirst($mod_name)." extends Model\n{\n\n";
                     if(AUTORESOLVE_PLURAL_NAMES == true){
-                        $f_line = "<?php\n\nclass ".ucfirst(rtrim($mod_name, 's'))." extends Model\n{\n\n";
+                        $f_line = "<?php\n\nclass ".ucfirst(resolvePluraNameToSingular($mod_name))." extends Model\n{\n\n";
                     }
                     //get all model parameters and create protected variables
 
@@ -280,6 +280,14 @@ runCommand($command, $command_action, $arguments_array);
 #endregion
 
 #region HELPERS
+
+function resolvePluraNameToSingular($name){
+    if(strtolower(substr($name, -3)) == 'ies'){
+        return str_replace("ies", "y", $name);
+    }else{
+        return rtrim($name, 's');
+    }
+}
 
 function checkfile($filename){
     if(file_exists($filename)){
@@ -565,5 +573,4 @@ function createDeleteDBQuery($table_name, $parameters){
 }
 
 #endregion
-
 
