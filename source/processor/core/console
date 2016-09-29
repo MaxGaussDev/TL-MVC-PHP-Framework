@@ -133,7 +133,7 @@ runCommand($command, $command_action, $arguments_array);
         echo "  \t: create view <name> : creates a view folder with index.phtml file in the views fodler\n";
         echo "  \t: create mvc <name> : creates model, view and the controller templates with the given name\n";
         echo "help \t: displays all commands\n";
-        echo "migrate : imports databse structure and creates model files with attributes and methods\n";
+        echo "migrate : imports databse structure and creates model files with attributes and magic methods\n";
         echo "version : displays current framework version\n";
         echo "\n";
     }
@@ -156,6 +156,9 @@ runCommand($command, $command_action, $arguments_array);
                 $file = fopen($file_location, "w") or die("Unable to open file!");
                 if($params_chk == '-p'){
                     $f_line = "<?php\n\nclass ".ucfirst($mod_name)." extends Model\n{\n\n";
+                    if(AUTORESOLVE_PLURAL_NAMES == true){
+                        $f_line = "<?php\n\nclass ".ucfirst(resolvePluraNameToSingular($mod_name))." extends Model\n{\n\n";
+                    }
                     //get all model parameters and create protected variables
                     foreach($arg_array as $arg_param){
                         $f_line .="\tprotected $$arg_param;\n";
