@@ -49,14 +49,14 @@ class Controller
     // get json request body data
     protected function getJSON()
     {
-        if($_SERVER['CONTENT_TYPE'] == 'application/json' || $_SERVER['CONTENT_TYPE'] == 'text/plain'){
+        if(Ralph::containsPrefix($_SERVER['CONTENT_TYPE'], 'application/json') || Ralph::containsPrefix($_SERVER['CONTENT_TYPE'], 'text/plain')){
             return (object)json_decode(file_get_contents('php://input'), true);
         }else{
             return false;
         }
     }
 
-    // get request parameters
+    // get request parameters (still in experimental phase)
     protected function getRequestParameters()
     {
         $method = $this->getMethod();

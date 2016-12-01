@@ -8,8 +8,13 @@ class DefaultController extends Controller
         //load model example
         //$model = $this->loadModel('ModelName');
 
+        $chk = Ralph::sanitize('application/json;charset =utf-8čćžšđšđ$%&');
+
+        print_r($chk);
+        die();
+
         //render  view to frontend
-        $this->renderView('example/index', array("value" => "some example value to pass on to the view"));
+        $this->renderView('example/index', array("value" => "some example value to pass on to the view: {$chk}"));
 
         // return json response
         //$this->returnJson();

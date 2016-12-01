@@ -1,5 +1,6 @@
 <?php
 
+require_once 'core/Ralph.php';
 require_once 'core/Config.php';
 require_once 'core/Security.php';
 require_once 'core/App.php';
