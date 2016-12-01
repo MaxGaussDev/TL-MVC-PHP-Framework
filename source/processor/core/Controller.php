@@ -40,6 +40,44 @@ class Controller
         header("Location: http://{$redirect_uri}");
     }
 
+    // get request method
+    protected function getMethod()
+    {
+        return $_SERVER['REQUEST_METHOD'];
+    }
+
+    // get json request body data
+    protected function getJSON()
+    {
+        if($_SERVER['CONTENT_TYPE'] == 'application/json' || $_SERVER['CONTENT_TYPE'] == 'text/plain'){
+            return (object)json_decode(file_get_contents('php://input'), true);
+        }else{
+            return false;
+        }
+    }
+
+    // get request parameters
+    protected function getRequestParameters()
+    {
+        $method = $this->getMethod();
+        if($method == 'POST'){
+            $data = array();
+            foreach($_POST as $key => $value){
+                // do some security stuff here for request params
+                if(!empty($_POST[$key])){
+                    if(strtolower($key) != 'email'){
+                        $data[$key] = urlencode($value);
+                    }else{
+                        $data[$key] = $value;
+                    }
+                }
+            }
+            return (object)$data;
+        }else{
+            return false;
+        }
+    }
+
     // return json response
     protected function returnJson($data = null, $message = null, $code = 200)
     {

@@ -124,7 +124,7 @@ runCommand($command, $command_action, $arguments_array);
         echo "---------------------------------------------------------------------------------------------------\n";
         echo "Command list:\n";
         echo "---------------------------------------------------------------------------------------------------\n";
-        echo "bake \t: maps the database and creates models with baisc CRUD methods\n";
+        echo "bake \t: maps the database and creates models with basicc CRUD methods\n";
         echo "create \t: automatically creates files with setup\n";
         echo "  \t: examples:\n";
         echo "  \t: create controller <name>: creates NameController.php file in the controllers folder\n";
@@ -153,7 +153,7 @@ runCommand($command, $command_action, $arguments_array);
                 echo "Model file '".ucfirst($mod_name)."' already exists\n";
             }else{
                 echo "Creating model file... {$mod_name}\n";
-                $file = fopen($file_location, "w") or die("Unable to open file!");
+                $file = fopen($file_location, "w") or die("Unable to open file at: {$file_location}\n");
                 if($params_chk == '-p'){
                     $f_line = "<?php\n\nclass ".ucfirst($mod_name)." extends Model\n{\n\n";
                     if(AUTORESOLVE_PLURAL_NAMES == true){
