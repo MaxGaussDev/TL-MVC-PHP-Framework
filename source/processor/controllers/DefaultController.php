@@ -10,7 +10,7 @@ class DefaultController extends Controller
 
 
         //render  view to frontend
-        $this->renderView('example/index', array("value" => "some example value to pass on to the view: {$chk}"));
+        $this->renderView('example/index', array("value" => "some example value to pass on to the view."));
 
         // return json response
         //$this->returnJson();
