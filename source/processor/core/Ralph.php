@@ -62,6 +62,16 @@ class Ralph
         }
     }
 
-
+    // returns object from array of objects by property values
+    // ex: ($objects_array_name, 'property-name', $property_value)
+    public function findObjectInArrayByPropertyValue($array, $index, $value)
+    {
+        foreach($array as $arrayInf) {
+            if($arrayInf->{$index} == $value) {
+                return $arrayInf;
+            }
+        }
+        return null;
+    }
 
 }
