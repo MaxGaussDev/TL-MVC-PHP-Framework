@@ -170,6 +170,12 @@ Most of the available functions will be displayed with the help command. Tiny's 
 # Development mode
 Development mode is enabled by default in the Config.php file. If enabled it will return error messages in the response (for example if there are no defined routes, if some MVC files are missing, some Database exceptions etc.).
 
+# Ralph
+Ralph is a helper class that contains static methods to make life easier. For example, you can user Ralph to find sufixes or prefixes of a string, sort object arrays, search object arrays etc. This class is updated every now and then with new methods. Ralph is already included in init.php loader and it is accessible from about anywhere.
+```
+$slug = Ralph::sanitize('Some string That needs to be slugified');
+```
+
 # The end, for now...
 So far, that's it. 
 
