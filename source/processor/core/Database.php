@@ -15,7 +15,7 @@ class Database
         $result = $conn->query($query);
         if(!$result){
             if(DEV_MODE == true) {
-                dlog("Database Connection failed: " . $conn->error);
+                dlog("Database Query Error: " . $conn->error);
             }
             return false;
         }else{
