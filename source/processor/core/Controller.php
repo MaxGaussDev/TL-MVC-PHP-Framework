@@ -12,7 +12,7 @@ class Controller
             // throw error if model file does not exist
             if(DEV_MODE == true) {
                 $error_msg = 'The Model file: "' . ucfirst($model) . '.php" was not found';
-                die($error_msg);
+                dlog($error_msg);
             }
         }
     }
@@ -26,7 +26,7 @@ class Controller
             // throw error if model file does not exist
             if(DEV_MODE == true) {
                 $error_msg = 'The View file: "' . $view . '.phtml" was not found';
-                die($error_msg);
+                dlog($error_msg);
             }
         }
     }

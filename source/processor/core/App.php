@@ -37,7 +37,7 @@ class App
                         // throw error if the controller method is not found
                         if (DEV_MODE == true) {
                             $error_msg = 'Method "' . ucfirst($route_components_array[1]) . '' . CONTROLLER_ACTION_SUFFIX . '" not found in ' . get_class($this->controller) . ' Class';
-                            die($error_msg);
+                            dlog($error_msg);
                         }
                     }
                 }
@@ -53,7 +53,7 @@ class App
                 // throw error if controller file does not exist
                 if (DEV_MODE == true) {
                     $error_msg = 'The Controller file: "' . ucfirst($route_components_array[0]) . '' . CONTROLLER_SUFFIX . CONTROLLER_FILE_EXTENSION . '" was not found';
-                    die($error_msg);
+                    dlog($error_msg);
                 }
             }
         }else{
@@ -79,31 +79,36 @@ class App
                                     }
                                     // passing on the parameters with their names defined in routes
                                     call_user_func_array(array($this->controller, $this->method), $this->parameters);
+                                }else{
+                                    if (DEV_MODE == true) {
+                                        $error_msg = 'Method: <b>'.$route_components_array['action']. '</b> not found in: '.CONTROLLERS_DIR.$route_components_array['controller'].CONTROLLER_FILE_EXTENSION;
+                                        dlog($error_msg);
+                                    }
                                 }
                             }else{
                                 if (DEV_MODE == true) {
                                     $error_msg = 'No Method found for Route: '.$_GET['route'];
-                                    die($error_msg);
+                                    dlog($error_msg);
                                 }
                             }
                         }
                     }else{
                         if (DEV_MODE == true) {
                             $error_msg = 'No route found for: /'.$_GET['route'];
-                            die($error_msg);
+                            dlog($error_msg);
                         }
                     }
                 }else{
                     if (DEV_MODE == true) {
                         $error_msg = 'Could not find Router Class in: '.ROUTES_CONFIG_FILE.' file.';
-                        die($error_msg);
+                        dlog($error_msg);
                     }
                 }
             }else{
                 // no router.php file found
                 if (DEV_MODE == true) {
                     $error_msg = 'The Routes configuration file not set.';
-                    die($error_msg);
+                    dlog($error_msg);
                 }
             }
         }
