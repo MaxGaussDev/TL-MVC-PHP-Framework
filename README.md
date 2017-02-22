@@ -34,6 +34,7 @@ TL MVC is pretty much flexible about it's project structure, but there are a few
 │   │   ├── console
 │   │   ├── Controller.php
 │   │   ├── Database.php
+│   │   ├── Functions.php
 │   │   ├── Model.php
 │   │   ├── Router.php
 │   │   └── Security.php
@@ -174,6 +175,31 @@ Development mode is enabled by default in the Config.php file. If enabled it wil
 Ralph is a helper class that contains static methods to make life easier. For example, you can user Ralph to find sufixes or prefixes of a string, sort object arrays, search object arrays etc. This class is updated every now and then with new methods. Ralph is already included in init.php loader and it is accessible from about anywhere.
 ```
 $slug = Ralph::sanitize('Some string That needs to be slugified');
+```
+# DLog
+Dlog is a debug log function that you can use inside your MVC structure or any PHP file inside your source directory. 
+```
+// example - outputing a message
+$msg = "some error message or string";
+dlog($msg);
+
+// example - dumping an object or array
+$object = new stdClass;
+$object->some_property = 'some value';
+
+dlog($object);
+```
+The output will show dumped values and a simple stack trace. If you have a development mode set to true, a simple example can be viewed when calling an unexistent route in the browser:
+```
+DLog - App :: __construct :: Line - 5
+Called from :: /var/www/html/TLMVC/source/processor/core/App.phpData 
+
+Stack Trace: 
+/var/www/html/TLMVC/source/processor/core/App.php (Line: 98)
+/var/www/html/TLMVC/source/index.php (Line: 5)
+
+Data Dump:
+No route found for: /some/unexistent/route
 ```
 
 # The end, for now...
