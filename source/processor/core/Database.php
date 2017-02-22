@@ -9,7 +9,7 @@ class Database
         // Check connection
         if ($conn->connect_error) {
             if(DEV_MODE == true) {
-                  die("Database Connection failed: " . $conn->connect_error);
+                  dlog("Database Connection failed: " . $conn->connect_error);
             }
         }
         $result = $conn->query($query);
