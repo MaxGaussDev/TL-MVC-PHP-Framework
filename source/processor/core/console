@@ -85,6 +85,7 @@ runCommand($command, $command_action, $arguments_array);
         foreach($tables as $table){
             $result = getTableStruct($table);
             createWithAdditional('model', $table, '-a', $result);
+            createWithAdditional('controller', $table, '-a', $result);
         }
     }
 
@@ -114,7 +115,7 @@ runCommand($command, $command_action, $arguments_array);
         echo "\n";
         echo "TinyLord MVC framework for php v0.5\n";
         echo "The console is working like a charm.\n";
-        echo "Type 'help' for details...\n";
+        echo "Type 'php console help' for details...\n";
         echo "\n";
     }
 
@@ -147,6 +148,10 @@ runCommand($command, $command_action, $arguments_array);
                 $m_name = resolvePluraNameToSingular($m_name);
             }
             $foldername = str_replace("processor/", "../", MODELS_DIR);
+            // check if models directory exists, create if none
+            if (!file_exists($foldername)) {
+                mkdir($foldername, 0777, true);
+            }
             $file_location = $foldername.$m_name.MODEL_FILE_EXTENSION;
             if(checkfile($file_location)){
                 echo "Model file '".ucfirst($mod_name)."' already exists\n";
@@ -221,6 +226,187 @@ runCommand($command, $command_action, $arguments_array);
                 fwrite($file, $f_line);
                 fclose($file);
                 echo "File created.\n";
+            }
+        }elseif($call=='controller'){
+            // resolve controller name
+            $ctl_name = lcfirst(createFunctionNameFromTableName($name));
+            $c_name = ucfirst($ctl_name);
+            if(AUTORESOLVE_PLURAL_NAMES == true){
+                // english only, for example DB table name: users --> Model name: User
+                // still in the testing phase
+                $c_name = resolvePluraNameToSingular($c_name);
+            }
+            // resolve model name for loading
+            $mod_name = lcfirst(createFunctionNameFromTableName($name));
+            $m_name = ucfirst($mod_name);
+            if(AUTORESOLVE_PLURAL_NAMES == true){
+                // english only, for example DB table name: users --> Model name: User
+                // still in the testing phase
+                $m_name = resolvePluraNameToSingular($m_name);
+            }
+            // create controller file
+            $foldername = str_replace("processor/", "../", CONTROLLERS_DIR);
+            $file_location = $foldername.$c_name.CONTROLLER_SUFFIX.CONTROLLER_FILE_EXTENSION;
+            if(checkfile($file_location)){
+                echo "Controller file: '".$c_name.CONTROLLER_SUFFIX.CONTROLLER_FILE_EXTENSION."' already exists\n";
+            }else {
+                echo "Creating controller file: ".$c_name.CONTROLLER_SUFFIX.CONTROLLER_FILE_EXTENSION."\n";
+                $file = fopen($file_location, "w") or die("Unable to open file at: {$file_location}\n");
+                if($params_chk == '-a'){
+                    $f_line = "<?php\n\nclass ".ucfirst($c_name.CONTROLLER_SUFFIX)." extends Controller\n{\n\n";
+                    $f_line .="#region ACTION METHODS\n\n";
+
+                    // create CRUD actions here
+                    // list all models
+                    $f_line .="\tpublic function List".CONTROLLER_ACTION_SUFFIX."()\n\t{\n";
+                    $f_line .="\t\t// load model\n";
+                    $f_line .="\t\t\$model = \$this->loadModel('{$m_name}');\n\n";
+                    $f_line .="\t\t// get all models and put them in array\n";
+                    $f_line .="\t\t\$models_array = \$model->getAll();\n";
+                    $f_line .="\t\tprint_r(\$models_array);\n";
+                    $f_line .="\t}\n\n";
+
+                    // add new
+                    $f_line .="\tpublic function Add".CONTROLLER_ACTION_SUFFIX."()\n\t{\n";
+                    $f_line .="\t\t// load model\n";
+                    $f_line .="\t\t\$model = \$this->loadModel('{$m_name}');\n\n";
+                    $f_line .="\t\t// get data from post request\n";
+                    $f_line .="\t\t\$request_parameters = \$this->getRequestParameters();\n\n";
+
+                    // generate code that gets all post request parameters
+                    $cnt = 0;
+                    $primary_key = null;
+                    foreach($arg_array as $param){
+                        // don't add the primary key
+                        if($param['Key'] != 'PRI') {
+                            if ($cnt == 0) {
+                                $f_line .= "\t\t\${$param['Field']} = ";
+                            } else {
+                                $f_line .= "\t\t\${$param['Field']} = ";
+                            }
+                            $par_filed_val = strtolower($param['Field']);
+                            $f_line .= "\$request_parameters->{$par_filed_val};\n";
+                            $cnt++;
+                        }
+                    }
+                    $f_line .="\n"; // just to look all nice and shit
+                    // map request parameters to model setter methods
+                    $f_line .="\t\t// set model properties from request parameters\n";
+
+                    $identifier_name = 'id';
+                    foreach($arg_array as $param){
+                        // don't add the primary key
+                        if($param['Key'] != 'PRI') {
+                                $f_line .= "\t\t\$model->";
+                                $rel_name =lcfirst(createFunctionNameFromTableName($param['Field']));
+                                $rel_name = ucfirst($rel_name);
+                                $arg_name = $param['Field'];
+                                $f_line .= "set$rel_name($$arg_name);\n";
+                        }else{
+                            $identifier_name = lcfirst(createFunctionNameFromTableName($param['Field']));
+                            $identifier_name = ucfirst($identifier_name);
+                        }
+                    }
+                    $f_line .="\n\t\t// push model to database\n";
+                    $f_line .="\t\t\$model->insert();\n";
+                    // TODO: check for rest api settings, otherwise return a flash message through a view
+                    $f_line .="\n\t\t// show data\n";
+                    $f_line .="\t\tdlog(\"Inserted {$m_name} with identifier: {\$model->get{$identifier_name}()}\");\n";
+                    $f_line .="\t}\n\n";
+
+
+                    // view single
+                    $f_line .="\tpublic function Show".CONTROLLER_ACTION_SUFFIX."(\$identifier)\n\t{\n";
+                    $f_line .="\t\t// load model\n";
+                    $f_line .="\t\t\$model = \$this->loadModel('{$m_name}');\n\n";
+                    $f_line .="\t\t// get identifier from get request and find a single model object\n";
+                    $f_line .="\t\t\$model->selectById(\$identifier);\n\n";
+                    $f_line .="\t\tif(!empty(\$model->get{$identifier_name}())){\n";
+                    $f_line .="\t\t\t//model object found, show data\n";
+                    // TODO: check for rest api settings, otherwise return a flash message through a view
+                    $f_line .="\t\t\tdlog(\$model);\n";
+                    $f_line .="\t\t}else{\n";
+                    $f_line .="\t\t\t//model object not found, handle here\n";
+                    $f_line .="\t\t\tdlog(\"{$m_name} with identifier: {\$identifier} not found\");\n";
+                    $f_line .="\t\t}\n";
+                    $f_line .="\t}\n\n";
+
+                    // remove single
+                    $f_line .="\tpublic function Remove".CONTROLLER_ACTION_SUFFIX."(\$identifier)\n\t{\n";
+                    $f_line .="\t\t// load model\n";
+                    $f_line .="\t\t\$model = \$this->loadModel('{$m_name}');\n\n";
+                    $f_line .="\t\t// get identifier from get request and find a single model object\n";
+                    $f_line .="\t\t\$model->selectById(\$identifier);\n\n";
+                    $f_line .="\t\tif(!empty(\$model->get{$identifier_name}())){\n";
+                    $f_line .="\t\t\t//model object found, show data\n";
+                    // TODO: check for rest api settings, otherwise return a flash message through a view
+                    $f_line .="\t\t\t\$model->delete();\n";
+                    $f_line .="\t\t\tdlog(\"{$m_name} with identifier: {\$identifier} removed\");\n";
+                    $f_line .="\t\t}else{\n";
+                    $f_line .="\t\t\t//model object not found, handle here\n";
+                    $f_line .="\t\t\tdlog(\"{$m_name} with identifier: {\$identifier} not found\");\n";
+                    $f_line .="\t\t}\n";
+                    $f_line .="\t}\n\n";
+
+                    // edit single
+                    $f_line .="\tpublic function Update".CONTROLLER_ACTION_SUFFIX."(\$identifier)\n\t{\n";
+                    $f_line .="\t\t// load model\n";
+                    $f_line .="\t\t\$model = \$this->loadModel('{$m_name}');\n\n";
+                    $f_line .="\t\t// get identifier from request and find a single model object to update\n";
+                    $f_line .="\t\t\$model->selectById(\$identifier);\n\n";
+                    $f_line .="\t\tif(!empty(\$model->get{$identifier_name}())){\n";
+                    $f_line .="\t\t\t//model object found\n";
+
+                    // getrequest data
+                    $f_line .="\t\t\t// get data from post request\n";
+                    $f_line .="\t\t\t\$request_parameters = \$this->getRequestParameters();\n\n";
+
+                    // generate code that gets all post request parameters
+                    $cnt = 0;
+                    $primary_key = null;
+                    foreach($arg_array as $param){
+                        // don't add the primary key
+                        if($param['Key'] != 'PRI') {
+                            if ($cnt == 0) {
+                                $f_line .= "\t\t\t\${$param['Field']} = ";
+                            } else {
+                                $f_line .= "\t\t\t\${$param['Field']} = ";
+                            }
+                            $par_filed_val = strtolower($param['Field']);
+                            $f_line .= "\$request_parameters->{$par_filed_val};\n";
+                            $cnt++;
+                        }
+                    }
+                    $f_line .="\n"; // just to look all nice and shit
+                    // map request parameters to model setter methods
+                    $f_line .="\t\t\t// set model properties from request parameters\n";
+
+                    foreach($arg_array as $param){
+                        // don't add the primary key
+                        if($param['Key'] != 'PRI') {
+                            $f_line .= "\t\t\t\$model->";
+                            $rel_name =lcfirst(createFunctionNameFromTableName($param['Field']));
+                            $rel_name = ucfirst($rel_name);
+                            $arg_name = $param['Field'];
+                            $f_line .= "set$rel_name($$arg_name);\n";
+                        }
+                    }
+                    $f_line .="\t\t\t\$model->update();\n";
+                    // TODO: check for rest api settings, otherwise return a flash message through a view
+                    $f_line .="\t\t\tdlog(\"{$m_name} with identifier: {\$identifier} updated\");\n";
+                    $f_line .="\t\t}else{\n";
+                    $f_line .="\t\t\t//model object not found, handle here\n";
+                    $f_line .="\t\t\tdlog(\"{$m_name} with identifier: {\$identifier} not found\");\n";
+                    $f_line .="\t\t}\n";
+                    $f_line .="\t}\n\n";
+
+                    $f_line .="\n#endregion\n";;
+                    $f_line .="\n}\n";
+                    fwrite($file, pack("CCC",0xef,0xbb,0xbf));
+                    fwrite($file, $f_line);
+                    fclose($file);
+                    echo "File created.\n";
+                }
             }
         }
     }

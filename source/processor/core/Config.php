@@ -33,10 +33,10 @@ define('VIEWS_DIR', 'processor/views/');
 
 // database (MYSQL)
 define('DB_MYSQL_HOST', '127.0.0.1');
-define('DB_MYSQL_PORT', 8889);
+define('DB_MYSQL_PORT', 3306);
 define('DB_MYSQL_USER', 'root');
 define('DB_MYSQL_PASSWORD', 'root');
-define('DB_MYSQL_DATABASE', 'mcvtest');
+define('DB_MYSQL_DATABASE', 'database_name');
 
 
 // console options
