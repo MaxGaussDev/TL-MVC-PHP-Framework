@@ -39,6 +39,7 @@ class App
                             $error_msg = 'Method "' . ucfirst($route_components_array[1]) . '' . CONTROLLER_ACTION_SUFFIX . '" not found in ' . get_class($this->controller) . ' Class';
                             dlog($error_msg);
                         }
+                        throw_not_found_response_error();
                     }
                 }
 
@@ -55,6 +56,7 @@ class App
                     $error_msg = 'The Controller file: "' . ucfirst($route_components_array[0]) . '' . CONTROLLER_SUFFIX . CONTROLLER_FILE_EXTENSION . '" was not found';
                     dlog($error_msg);
                 }
+                throw_not_found_response_error();
             }
         }else{
             // skip auto resolve routes, and check config.php for ROUTES const.
@@ -64,6 +66,29 @@ class App
                 if (class_exists('Router')) {
                     $router = new Router();
                     $route_components_array = $router->resolveRoute($this->parseRoute());
+
+                    // checking if the request method is allowed at this route
+                    if(FORCE_ROUTE_SECURITY == true && isset($route_components_array["methods"]) && count($route_components_array["methods"]) > 0){
+                        if(!in_array($_SERVER['REQUEST_METHOD'], $route_components_array["methods"])){
+                            if(DEV_MODE == true) {
+                                $error_msg = 'METHOD: "' . $_SERVER['REQUEST_METHOD'] . '" Not allowed.';
+                                dlog($error_msg);
+                            }
+                            throw_unauthorised_response_error();
+                        }
+                    }
+
+                    // checking if the request method is allowed at this route
+                    if(FORCE_ROUTE_SECURITY == true && isset($route_components_array["roles"]) && count($route_components_array["roles"]) > 0){
+                        if(!in_array(Security::getAccess()->role, $route_components_array["roles"])){
+                            if(DEV_MODE == true) {
+                                $error_msg = 'Unauthorised user role: '.Security::getAccess()->role;
+                                dlog($error_msg);
+                            }
+                            throw_unauthorised_response_error();
+                        }
+                    }
+
                     if($route_components_array != false){
                         if (file_exists(CONTROLLERS_DIR.$route_components_array['controller'].CONTROLLER_FILE_EXTENSION)){
                             $this->controller = $route_components_array['controller'];
@@ -73,6 +98,13 @@ class App
                             if (isset($route_components_array['action'])) {
                                 if (method_exists($this->controller, $route_components_array['action'])) {
                                     $this->method = $route_components_array['action'];
+
+                                    // defining the menu item index, to mark item as active
+                                    // check Ralph::itemMenuIndex()
+                                    if(isset($route_components_array['menu_item_index'])){
+                                        define('MENU_ITEM_INDEX', $route_components_array['menu_item_index']);
+                                    }
+
                                     // actually call the damn thing and pass parameters
                                     if(isset($route_components_array['parameters'])){
                                         $this->parameters = $route_components_array['parameters'];
@@ -84,12 +116,14 @@ class App
                                         $error_msg = 'Method: <b>'.$route_components_array['action']. '</b> not found in: '.CONTROLLERS_DIR.$route_components_array['controller'].CONTROLLER_FILE_EXTENSION;
                                         dlog($error_msg);
                                     }
+                                    throw_not_found_response_error();
                                 }
                             }else{
                                 if (DEV_MODE == true) {
                                     $error_msg = 'No Method found for Route: '.$_GET['route'];
                                     dlog($error_msg);
                                 }
+                                throw_not_found_response_error();
                             }
                         }
                     }else{
@@ -97,12 +131,14 @@ class App
                             $error_msg = 'No route found for: /'.$_GET['route'];
                             dlog($error_msg);
                         }
+                        throw_not_found_response_error();
                     }
                 }else{
                     if (DEV_MODE == true) {
                         $error_msg = 'Could not find Router Class in: '.ROUTES_CONFIG_FILE.' file.';
                         dlog($error_msg);
                     }
+                    throw_not_found_response_error();
                 }
             }else{
                 // no router.php file found
@@ -110,6 +146,7 @@ class App
                     $error_msg = 'The Routes configuration file not set.';
                     dlog($error_msg);
                 }
+                throw_service_unavailable_response_error();
             }
         }
     }

@@ -14,14 +14,24 @@
     <link rel="stylesheet" href="public/css/main.css">
 
 </head>
-<body>
-
-    <h1>Default Controller</h1>
+<body style="text-align: center">
+<h1><br></h1>
+    <img src="https://www.spreadshirt.com/image-server/v1/designs/12482951,width=178,height=178/goat-head-with-pentagram-inverted.png" />
+    <h1>Tiny Lord</h1>
 
     <?php
+
         foreach($data as $ar){
             echo '<p>'.$ar.'</p>';
         }
+
+        // md file parser
+        /*if(file_exists(__DIR__.'/../../../../README.md')){
+            require_once __DIR__.'/../../lib/Parsedown.php';
+            $Parsedown = new Parsedown();
+            echo "<div style='text-align: left'>".$Parsedown->text(file_get_contents(__DIR__.'/../../../../README.md'))."</div>";
+        }*/
+
     ?>
 
 

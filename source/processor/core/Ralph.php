@@ -74,4 +74,16 @@ class Ralph
         return null;
     }
 
+    // mark main menu item as active
+    public static function itemMenuIndex($item_index_number){
+        // check router for menu_item_index property in defined routes
+        if(defined("MENU_ITEM_INDEX")){
+            if(MENU_ITEM_INDEX == $item_index_number){
+                //change this if needed
+                // this will be used by css usually to mark selected menu page
+                echo "class=\"active\"";
+            }
+        }
+    }
+
 }

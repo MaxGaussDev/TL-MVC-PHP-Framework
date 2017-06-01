@@ -4,6 +4,13 @@
 
 Class Router
 {
+    // route parameters:
+    //  controller          - what controller will be called
+    //  action              - controller public method that will be called
+    //  methods             - array of supported request methods, if not set all methods will be allowed
+    //  menu_item_index     - useful for automatically selecting menu tabs (see: Ralph.php line: 77)
+    //  roles               - array of supported user roles that have access to the route, if not set all roles will be allowed
+
     protected $routes = array(
         "/" => array(
             "controller" => "DefaultController",

@@ -1,0 +1,1118 @@
+<?php
+
+require_once 'Config.php';
+
+#region SETUP
+
+    $console_arguments = $_SERVER['argv'];
+    $command = $console_arguments[1];
+
+    $routes_array = array();
+
+    $arguments = array();
+    for($i = 0; $i < count($console_arguments); $i++){
+        if($i>1){
+            array_push($arguments, $console_arguments[$i]);
+        }
+    }
+
+    $commands_array = array(
+        "create:model" => array(
+            "requires_arguments" => true,
+            "short_description" => "Creates a model file with given name in the models directory.",
+            "description" => "Model builder will create a model file inside the models directory.
+        If the file with the same name exists the file will not be created and the builder will stop.
+        Make sure you set the filename with capital first letter and avoid underscores in the class name.
+        Although, the builder will try and correct the property names to it's own naming convention, please use the camelCase
+        naming convention for object property names.
+        When setting up property names, properties like id, hashed id, createdAt and updatedAt will be added automatically
+        through the parent class, set them only if you need to override.",
+            "examples" => array("create:model -p <model-name>","create:model -p <model-name> <property1> <property2> <property3>:<optional-data-type> ..."),
+            "call_function" => "modelCmd"
+        ),
+        /*"create:view" => array(
+            "requires_arguments" => true,
+            "short_description" => "Creates a view with given name in the views directory.",
+            "description" => "Some detailed description of the command goes here",
+            "examples" => array("create:view -p <view-name>"),
+            "call_function" => "viewCmd"
+        ),*/
+        "create:controller" => array(
+            "requires_arguments" => true,
+            "short_description" => "Creates a controller with given name in the controllers directory.",
+            "description" => "Controller builder will create a controller file with a given name inside the controllers directory.
+        If the file with the same name exists the file will not be created and the builder will stop.
+        Make sure you set the filename with capital first letter and avoid underscores in the class name.
+        Although, the builder will try and correct the filename and model property names to it's own naming convention, please use the camelCase
+        naming convention for object property names.
+        Controller builder also supports a few additional functions:
+        \e[33m -s:true \e[0m will prepare routes to expect hashed identifiers instead of inceremented identifiers and add req. methods to each route
+        \e[33m -ml:true \e[0m will prepare routes to expect language code in the request uri,
+        \e[33m -api:true \e[0m will prepare controller for expecting json request and will set json response as default.
+        You can also pass arguments with model property names (see create:model for naming convention rules) for controller to expect them
+        during CRUD requests.",
+            "examples" => array("create:controller -n <controller-name>",
+                                "create:controller -n <controller-name> <property1> <property2> ...",
+                                "create:controller -n <controller-name> -s:true -ml:true",
+                                "create:controller -n <controller-name> <property1> <property2> ... -s:true -ml:true -api:true"),
+            "call_function" => "ctrlCmd"
+        ),
+        "help" => array(
+            "requires_arguments" => false,
+            "short_description" => "Displays list of supported commands.",
+            "call_function" => "helpCmd"
+        ),
+        "version" => array(
+            "requires_arguments" => false,
+            "short_description" => "Shows current framework version.",
+            "examples" => array("version"),
+            "call_function" => "versionCmd"
+        ),
+        "compress:css" => array(
+            "requires_arguments" => false,
+            "short_description" => "Minifies CSS files from the 'public/css' directory into one file.",
+            "description" => "Compressor will only check the files in the public/css directory.
+        If any are found they will all be compressed into one single file in the same directory.
+        If you want you can specify the file name, otherwise it will be generated.",
+            "examples" => array("compress:css", "compress:css -n <filename-without-extension>"),
+            "call_function" => "compressCssCmd"
+        ),
+        "bake" => array(
+            "requires_arguments" => false,
+            "short_description" => "Good ole bake command.",
+            "description" => "Bake command maps the database and creates model files from it in the models directory. 
+        It will also create controller files with basic CRUD actions, it also support a few additional functions:
+        \e[33m -s:true \e[0m will prepare routes to expect hashed identifiers instead of inceremented identifiers and add req. methods to each route
+        \e[33m -ml:true \e[0m will prepare routes to expect language code in the request uri,
+        \e[33m -api:true \e[0m will prepare controller for expecting json request and will set json response as default.
+        Depending on the value of AUTORESOLVE_PLURAL_NAMES property in Config.php it will rename all model and controller names
+        accordingly.",
+            "examples" => array("bake", "bake -f -s:true -api:true -ml:true"),
+            "call_function" => "bakeCmd"
+        )
+    );
+
+#endregion
+
+resolveCommand($command, $commands_array, $arguments);
+
+#region COMMANDS
+
+function modelCmd($del = null, $args = null){
+    switch ($del){
+        case '-p':
+            if(!isset($args[1])){
+                displayErrorMsg("Error: 'create:model' file name not set!");
+                die();
+            }
+            // create file name
+            $mfilename = $args[1];
+            // check if the model properties are passed
+            unset($args[1]);
+            if(count($args)>0){
+                createModelFile($mfilename, $args);
+            }else{
+                createModelFile($mfilename);
+            }
+            break;
+        default:
+            displayErrorMsg("Error: 'create:model' command expects arguments!");
+            break;
+    }
+}
+
+function ctrlCmd($del = null, $args = null){
+    switch ($del){
+        case '-n':
+            if(!isset($args[1])){
+                displayErrorMsg("Error: 'create:controller' file name not set!");
+                die();
+            }
+            // create file name
+            $cfilename = $args[1];
+            // check if the controller properties are passed
+            unset($args[1]);
+            if(count($args)>0){
+
+                // preset additional parameters
+                $params = null;
+                $api = false;
+                $multilang = false;
+                $secure = false;
+
+                $ctrl_params = array();
+                // arguments: model params, if multilang (-ml:true), if rest api (-r:true), set hash as id (-s:true)
+                foreach ($args as $key => $value){
+                    if($value == "-ml:true"){
+                        $multilang = true;
+                        unset($args[$key]);
+                    }elseif($value == "-s:true"){
+                        $secure = true;
+                        unset($args[$key]);
+                    }elseif($value == "-api:true"){
+                        $api = true;
+                        unset($args[$key]);
+                    }else{
+                        array_push($ctrl_params, $value);
+                    }
+                }
+                // rename and fix all remaining parameter names
+                $params_rel_names = array();
+                $params_rel_names_json = array();
+
+                foreach ($ctrl_params as $pn){
+                    $prop_name = lcfirst(underscoreToCamelCase($pn));
+                    array_push($params_rel_names, $prop_name);
+                    if($api){
+                        // in case of rest api prepare json names
+                        $prop_name = camelCaseToUnderscore($pn);
+                        array_push($params_rel_names_json, $prop_name);
+                    }
+                }
+                // full parameters array for all cases
+                $c_params = array(
+                    "real" => $params_rel_names,
+                    "json" => $params_rel_names_json
+                );
+                createControllerFile($cfilename, $c_params, $api, $multilang, $secure);
+            }else{
+                createControllerFile($cfilename);
+            }
+            break;
+        default:
+            displayErrorMsg("Error: 'create:controller' command expects arguments!");
+            break;
+    }
+}
+
+function compressCssCmd($del = null, $args = null){
+    switch ($del){
+        case '-n':
+            compressCssFile($args[1]);
+            break;
+        default:
+            compressCssFile();
+            break;
+    }
+}
+
+function bakeCmd($del = null, $args = null){
+    // TODO: optional params to support api and security
+    require_once 'Ralph.php';
+    switch ($del){
+        case '-f':
+            foreach (getDBTables() as $table){
+                $obj_name = pluralNameToSingular($table);
+                // object name must be first argument
+                $cmd_model_args = array();
+
+                $properties = getTableStruct($table);
+                foreach ($properties as $p){
+                    $arg_val = $p['Field'];
+                    if($arg_val != 'id' && $arg_val != 'created_at' && $arg_val != 'updated_at' && $arg_val != 'deleted_at' && $arg_val != 'hash'){
+                        // test for data types
+                        if(Ralph::containsPrefix($arg_val, 'int')){ $arg_val .= ":int"; }
+                        array_push($cmd_model_args, underscoreToCamelCase($arg_val));
+                    }
+                }
+                createModelFile($obj_name, $cmd_model_args);
+                $api = false;
+                $multilang = false;
+                $secure = false;
+                if(count($args) > 0){
+                    if(in_array("-ml:true", $args)){ $multilang = true; }
+                    if(in_array("-s:true", $args)){ $secure = true;}
+                    if(in_array("-api:true", $args)){ $api = true;}
+                    createControllerFile($obj_name, null, $api, $multilang, $secure);
+                }else{
+                    createControllerFile($obj_name);
+                }
+            }
+            break;
+        default:
+            foreach (getDBTables() as $table){
+                $obj_name = pluralNameToSingular($table);
+                // object name must be first argument
+                $cmd_model_args = array();
+
+                $properties = getTableStruct($table);
+                foreach ($properties as $p){
+                    $arg_val = $p['Field'];
+                    if($arg_val != 'id' && $arg_val != 'created_at' && $arg_val != 'updated_at' && $arg_val != 'deleted_at' && $arg_val != 'hash'){
+                        // test for data types
+                        if(Ralph::containsPrefix($arg_val, 'int')){ $arg_val .= ":int"; }
+                        array_push($cmd_model_args, underscoreToCamelCase($arg_val));
+                    }
+                }
+                createModelFile($obj_name, $cmd_model_args);
+                createControllerFile($obj_name);
+            }
+            break;
+    }
+}
+
+#endregion
+
+#region BASIC HELP COMMAND FUNCTIONS
+
+function helpCmd($del = null, $args = null){
+    switch ($del){
+        case '-d':
+            // show command details here
+            if(isset($GLOBALS["commands_array"][$args[1]])){
+                if(isset($GLOBALS["commands_array"][$args[1]]['description'])){
+                    $txt = $GLOBALS["commands_array"][$args[1]]['description'];
+                    echo "\n\e[33m {$args[1]} \e[0m\n";
+                    echo "\t{$txt}\n\n";
+                    echo " How to use:\n";
+                    helpCmd('-e', $args);
+                    echo "\n";
+                }else{
+                    displayErrorMsg("Command: '{$args[1]}' has no detailed description.");
+                }
+            }else{
+                displayErrorMsg("Command: '{$args[1]}' not found.");
+                helpCmd();
+            }
+            break;
+        case '-e':
+            // show command examples here
+            if(isset($GLOBALS["commands_array"][$args[1]])){
+                if(isset($GLOBALS["commands_array"][$args[1]]['examples'])){
+                    foreach ($GLOBALS["commands_array"][$args[1]]['examples'] as $ex){
+                        $txt = "php {$_SERVER['argv'][0]} ".$ex;
+                        echo "\e[33m {$txt} \e[0m\n";
+                    }
+                }else{
+                    displayErrorMsg("Command: '{$args[1]}' has no examples.");
+                }
+            }else{
+                displayErrorMsg("Command: '{$args[1]}' not found.");
+                helpCmd();
+            }
+            break;
+        default:
+            // no arguments passed
+            echo "\nCommands list: \n\n";
+            foreach ($GLOBALS['commands_array'] as $key => $value){
+                echo "\e[33m ".$key." \033[0m ".$value['short_description']."\n";
+            }
+            echo "\nFor more details about each command use: \033[33m php {$_SERVER['argv'][0]} help -d <command> \033[0m \n";
+            echo "For examples of each command use: \033[33m php {$_SERVER['argv'][0]} help -e <command> \033[0m \n\n";
+            break;
+    }
+}
+
+function versionCmd(){
+
+    echo " _____ _             _                   _ \n";
+    echo "|_   _(_)           | |                 | |\n";
+    echo "  | |  _ _ __  _   _| |     ___  _ __ __| |\n";
+    echo "  | | | | '_ \| | | | |    / _ \| '__/ _` |\n";
+    echo "  | | | | | | | |_| | |___| (_) | | | (_| |\n";
+    echo "  \_/ |_|_| |_|\__, \_____/\___/|_|  \__,_|\n";
+    echo "                __/ |                      \n";
+    echo "               |___/                       \n";
+    echo "\n";
+    echo "TinyLord MVC framework for php \033[33m v0.8\033[0m \n";
+    echo "The console is working like a charm.\n";
+    echo "Currently running on ".php_uname('s')." ".php_uname('v')."\n";
+    echo "PHP version: ".phpversion()."\n";
+    echo "Type 'php {$_SERVER['argv'][0]} help' for details...\n";
+    echo "\n";
+    echo "Requirements:\n";
+    echo "\tPHP v5.4.32+ (current: \e[33mv".substr(phpversion(), 0, 6)."\e[0m)\n";
+    echo "\tRewrite Mod Enabled (-- Unknown --)\n";
+        if(in_array('curl', get_loaded_extensions())){  $cm = "\e[33mEnabled\e[0m"; }else{ $cm = "-- Disabled --"; };
+    echo "\tcURL Enabled ({$cm})\n";
+        if (class_exists('PDO')){  $pdom = "\e[33mEnabled\e[0m"; }else{ $pdom = "-- Disabled --"; };
+    echo "\tPDO Driver Enabled ({$pdom})\n";
+    echo "Optional:\n";
+        if(ini_get('allow_url_fopen')){  $fom = "\e[33mEnabled\e[0m"; }else{ $fom = "-- Disabled --"; };
+    echo "\tallow_url_fopen Enabled ({$cm})\n";
+    echo "\n";
+}
+
+#endregion
+
+#region CONSOLE HELPER FUNCTIONS
+
+    function resolveCommand($cmd, $commands_array, $arguments = null){
+        if(isset($commands_array[$cmd])){
+            if(!$arguments && !$commands_array[$cmd]['requires_arguments']){
+                // no arguments and none are required
+                $commands_array[$cmd]['call_function']();
+            }elseif(!$arguments && $commands_array[$cmd]['requires_arguments']) {
+                // missing required arguments
+                displayErrorMsg("Command: '{$cmd}' requires arguments.");
+            }else{
+                if(need_params($commands_array[$cmd]['call_function']) == 0){
+                    displayErrorMsg("Command: '{$cmd}' does not expect arguments.");
+                }else{
+                    $cmd_delimiter = $arguments[0];
+                    unset($arguments[0]);
+                    $cmd_values = $arguments;
+                    $commands_array[$cmd]['call_function']($cmd_delimiter, $cmd_values);
+                }
+            }
+        }else{
+            displayErrorMsg("Command: '{$cmd}' not found. Use 'php {$_SERVER['argv'][0]} help' for more details.");
+        }
+    }
+
+    function need_params($func) {
+        // check if function needs arguments or not
+        $reflection = new ReflectionFunction($func);
+        return $reflection->getNumberOfParameters();
+    }
+
+    function underscoreToCamelCase($name){
+        // $mod_name = lcfirst(str_replace('_', '', ucwords($name, "_")));
+        // won't work on windows, so we do it this way
+        $words = explode('_',$name);
+        $f_words = array();
+        foreach($words as $word){
+            array_push($f_words, ucfirst($word));
+        }
+        return implode("",$f_words);
+    }
+
+    function camelCaseToUnderscore($input) {
+        preg_match_all('!([A-Z][A-Z0-9]*(?=$|[A-Z][a-z0-9])|[A-Za-z][a-z0-9]+)!', $input, $matches);
+        $ret = $matches[0];
+        foreach ($ret as &$match) {
+            $match = $match == strtoupper($match) ? strtolower($match) : lcfirst($match);
+        }
+        return implode('_', $ret);
+    }
+
+    function displayErrorMsg($msg){
+        $text = new Colors();
+        echo "\n";
+        echo $text->getColoredString("\n\t".$msg."\n", "black", "red");
+        echo "\n";
+    }
+
+    function compressCssFile($name = null){
+        // get all css files into one array
+        $path = __DIR__."/../../public/css/";
+        echo "\nGathering information for css compression \n\n";
+        if(!file_exists($path)){
+            displayErrorMsg("CSS files public directory not found.");
+        }else{
+            $css_files = scandir($path);
+            $files_list = array();
+            foreach ($css_files as $cssf){
+                if(pathinfo($cssf)['extension'] == 'css'){
+                    array_push($files_list, $path.pathinfo($cssf)['basename']);
+                    echo "Reading file: '".pathinfo($cssf)['basename']."' \n";
+                }
+            }
+            echo "\n";
+            // Compressor setup
+            $cssmin = new CSSMin();
+            $cssmin->addFiles($files_list);
+            $cssmin->setOriginalCSS();
+            // Compress CSS
+            $cssmin->compressCSS();
+            $css_ugf = $cssmin->getCompressedCssString();
+
+            // Save new css content to a file
+            if(!$name){
+                require_once 'Security.php';
+                $css_file_name = Security::generateToken();
+            }else{
+                $css_file_name = $name;
+            }
+            $fp = fopen($path . $css_file_name.'.css',"wb");
+            fwrite($fp,$css_ugf);
+            fclose($fp);
+            echo "\nCreated file: '{$css_file_name}.css'\n\n";
+        }
+    }
+
+    function createModelFile($filename, $params = null){
+        // first check if the file allready exists
+        $path = __DIR__."/../../".MODELS_DIR;
+        if(!file_exists($path)){
+            // check for models directory
+            displayErrorMsg("Model files directory not found.");
+            die();
+        }else{
+            //check for existing file with the same name
+            $filename = ucfirst(underscoreToCamelCase($filename));
+            if(file_exists($path.$filename.MODEL_FILE_EXTENSION)){
+                displayErrorMsg("Model file ".$filename.MODEL_FILE_EXTENSION." already exists.");
+                die();
+            }
+            $file_string = "<?php\n\nclass {$filename} extends Model\n{\n";
+            // check for property names
+            if($params){
+                // convert to camelCase in case of "_"
+                $file_string .= "\n";
+                foreach ($params as $param){
+
+                    // support for variable types
+                    $param_data = explode(":", $param);
+                    $prop_name = lcfirst(underscoreToCamelCase($param_data[0]));
+                    $file_string .= "\tprotected \${$prop_name};\n";
+                }
+                $file_string .= "\n";
+                // create magic methods
+                foreach ($params as $param){
+                    // support for variable types
+                    $param_data = explode(":", $param);
+                    $prop_name = lcfirst(underscoreToCamelCase($param_data[0]));
+                    $prop_name_ff = ucfirst(underscoreToCamelCase($param_data[0]));
+
+                    $types_array = array("bool", "int", "float", "string", "double");
+
+                    // setter
+                    $file_string .= "\n\tpublic function set{$prop_name_ff}(\${$prop_name})\n";
+                    $file_string .= "\t{\n";
+                    if(isset($param_data[1])){
+                        if(in_array($param_data[1], $types_array)){
+                            $file_string .= "\t\t\$this->{$prop_name} = ({$param_data[1]})\${$prop_name};\n";
+                        }else{
+                            displayErrorMsg("Variable: '{$param_data[0]}' is declared with unsupported data type '{$param_data[1]}'. Must be: 'bool', 'int', 'float', 'string' or 'double'");
+                        }
+                    }else{
+                        $file_string .= "\t\t\$this->{$prop_name} = \${$prop_name};\n";
+                    }
+
+                    $file_string .= "\t}\n";
+                    // getter
+                    $file_string .= "\n\tpublic function get{$prop_name_ff}()\n";
+                    $file_string .= "\t{\n";
+
+                    if(isset($param_data[1])){
+                        if(in_array($param_data[1], $types_array)){
+                            $file_string .= "\t\treturn ({$param_data[1]})\$this->{$prop_name};\n";
+                        }else{
+                            displayErrorMsg("Variable: '{$param_data[0]}' is declared with unsupported data type '{$param_data[1]}'. Must be: 'bool', 'int', 'float', 'string' or 'double'");
+                        }
+                    }else{
+                        $file_string .= "\t\treturn \$this->{$prop_name};\n";
+                    }
+                    $file_string .= "\t}\n";
+                }
+            }
+            $file_string .= "\n}\n";
+            // create file
+            $fp = fopen($path.$filename.MODEL_FILE_EXTENSION,"wb");
+            fwrite($fp,$file_string);
+            fclose($fp);
+            echo "\nCreated file: '".$filename.MODEL_FILE_EXTENSION."'\n";
+        }
+    }
+
+    function createControllerFile($filename, $params = null, $api = false, $multilang = false, $secure = false){
+
+        // first check if the file allready exists
+        $path = __DIR__."/../../".CONTROLLERS_DIR;
+        $pref_name = ucfirst(underscoreToCamelCase($filename));
+
+        if(!file_exists($path)){
+            // check for controllers directory
+            displayErrorMsg("Controller files directory not found.");
+            die();
+        }else{
+            //check for existing file with the same name
+            $filename = ucfirst(underscoreToCamelCase($filename)).CONTROLLER_SUFFIX;
+            if(file_exists($path.$filename.CONTROLLER_FILE_EXTENSION)){
+                displayErrorMsg("Controller file ".$filename.CONTROLLER_FILE_EXTENSION." already exists.");
+                die();
+            }
+
+            $file_string = "<?php\n\nclass {$filename} extends Controller\n{\n";
+
+            // create actions here
+            $file_string .= createCtlAddF($pref_name, $params, $api, $multilang, $secure);
+            $file_string .= createCtlListF($pref_name, $params, $api, $multilang, $secure);
+            $file_string .= createCtlViewDetailsF($pref_name, $params, $api, $multilang, $secure);
+            $file_string .= createCtlUpdateF($pref_name, $params, $api, $multilang, $secure);
+            $file_string .= createCtlDeleteF($pref_name, $params, $api, $multilang, $secure);
+
+            // TODO: build documentation files for rest api
+
+            $file_string .= "\n}\n";
+            // create file
+            $fp = fopen($path.$filename.CONTROLLER_FILE_EXTENSION,"wb");
+            fwrite($fp,$file_string);
+            fclose($fp);
+            echo "\nCreated file: '".$filename.CONTROLLER_FILE_EXTENSION."'\n";
+        }
+    }
+
+    // controller public CRUD methods with router information
+    function createCtlAddF($ctl_name = null, $params = null, $api = false, $multilang = false, $secure = false){
+        // create suggestions for router
+        $file_string = "\n"; // separator
+
+        // create route suggestion comment
+        if($ctl_name){ $file_string .= createCtlRouterInfo($ctl_name, "Add", false, $multilang, $secure, array("POST", "HEAD", "OPTIONS")); }
+
+        // create method
+        $file_string .= "\n\tpublic function Add".CONTROLLER_ACTION_SUFFIX."(";
+        if($multilang) {$file_string .="\$lang)\n"; } else { $file_string .=")\n"; }
+        $file_string .= "\t{\n";
+
+            $model_name = str_replace(CONTROLLER_SUFFIX, "", $ctl_name);
+
+            // return messages
+            $return_msg = "'Created.'";
+            if($multilang){
+                $return_msg = "Msg::getMsg('created', \$lang)";
+            }
+            $err_msg = "'Error.'";
+            if($multilang){
+                $err_msg = "Msg::getMsg('general_error_msg', \$lang)";
+            }
+
+            // call model prepare insert
+            $file_string .= "\n\t\t\$model = new ".$model_name."();";
+            if($api){
+                $file_string .= "\n\t\t\$model->bindData(\$this->getJSON());";
+                $file_string .= "\n\t\t\$model->save();";
+            }else{
+                $file_string .= "\n\t\t\$model->bindData(\$this->getRequestParameters());";
+                $file_string .= "\n\t\t\$model->save();";
+            }
+            // check for success on insert
+            $file_string .= "\n\t\tif(!\$model->getId()){";
+            // error happened
+            $file_string .= "\n\t\t\tthrow_response_error(null, null, {$err_msg}, true);";
+            $file_string .= "\n\t\t}else{";
+            // everything is ok
+                if($api){
+                    $file_string .= "\n\t\t\t\$this->returnJson(null, {$return_msg}, 200);";
+                }else{
+                    // TODO: make sure the correct view is loaded
+                    $file_string .= "\n\t\t\t// to set flash message, uncomment this: ";
+                    $file_string .= "\n\t\t\t// Security::setFlashMessage({$return_msg});";
+                    $file_string .= "\n\t\t\t\$this->renderView('example/index', array(\"message\" => {$return_msg} ));";
+                }
+            $file_string .= "\n\t\t}";
+
+        $file_string .= "\n\t}\n";
+        return $file_string;
+    }
+
+    function createCtlListF($ctl_name = null, $params = null, $api = false, $multilang = false, $secure = false){
+        // create suggestions for router
+        $file_string = "\n"; // separator
+
+        // create route suggestion comment
+        if($ctl_name){ $file_string .= createCtlRouterInfo($ctl_name, "List", false, $multilang, $secure, array("GET", "HEAD", "OPTIONS")); }
+
+        // create method
+        $file_string .= "\n\tpublic function List".CONTROLLER_ACTION_SUFFIX."(";
+        if($multilang) {$file_string .="\$lang)\n"; } else { $file_string .=")\n"; }
+        $file_string .= "\t{\n";
+
+            $model_name = str_replace(CONTROLLER_SUFFIX, "", $ctl_name);
+            $file_string .= "\n\t\t\$model = new {$model_name}();";
+            $file_string .= "\n\n\t\t// looking for additional parameters for search options";
+            $file_string .= "\n\t\t\$req_data = \$this->getRequestParameters();";
+
+            $file_string .= "\n\n\t\t// setting up";
+            $file_string .= "\n\t\t\$parameters_array = array();";
+            $file_string .= "\n\t\t\$parameters_string = \"\";";
+
+            $file_string .= "\n\n\t\t// limit and offset";
+            $file_string .= "\n\t\tif(isset(\$req_data->limit)) { \$parameters_array[':limit'] = (int)\$req_data->limit; \$parameters_string .= \" LIMIT :limit\";}";
+            $file_string .= "\n\t\tif(isset(\$req_data->offset)) { \$parameters_array[':offset'] = (int)\$req_data->offset; \$parameters_string .= \" OFFSET :offset\";}";
+
+            $file_string .= "\n\n\t\t\$total_count = \$model->count();";
+            $file_string .= "\n\t\tif(\$total_count == 0){";
+                $return_msg = "'Not found.'";
+                if($multilang){
+                    $return_msg = "Msg::getErr('not_found', \$lang)";
+                }
+                $file_string .= "\n\t\t\tthrow_not_found_response_error({$return_msg});";
+            $file_string .= "\n\t\t}else{";
+                $file_string .= "\n\t\t\t\$models_array = \$model->findAll(\$parameters_string, \$parameters_array);";
+                $file_string .= "\n\t\t\tif(count(\$models_array) == 0){ throw_not_found_response_error({$return_msg}); }";
+                if($secure){
+                    $file_string .= "\n\t\t\t\$clean = array();";
+                    $file_string .= "\n\t\t\tforeach(\$models_array as \$mod){";
+                    if($api){
+                        $file_string .= "\n\t\t\t\t\$m_clean = \$mod->prepareForJson();";
+                        $file_string .= "\n\t\t\t\t// removing id for security";
+                        $file_string .= "\n\t\t\t\tunset(\$m_clean->id);";
+                        $file_string .= "\n\t\t\t\tarray_push(\$clean, \$m_clean);";
+                    }else{
+                        $file_string .= "\n\t\t\t\t\$m_clean = \$mod->convertToPublic();";
+                        $file_string .= "\n\t\t\t\t// removing id for security";
+                        $file_string .= "\n\t\t\t\tunset(\$m_clean->id);";
+                        $file_string .= "\n\t\t\t\tarray_push(\$clean, \$m_clean);";
+                    }
+                    $file_string .= "\n\t\t\t}";
+                }else{
+                    $file_string .= "\n\t\t\t\$clean = array();";
+                    $file_string .= "\n\t\t\tforeach(\$models_array as \$mod){";
+                    if($api){
+                        $file_string .= "\n\t\t\t\tarray_push(\$clean, \$mod->prepareForJson());";
+                    }else{
+                        $file_string .= "\n\t\t\t\tarray_push(\$clean, \$mod->convertToPublic());";
+                    }
+                    $file_string .= "\n\t\t\t}";
+                }
+                    // return filtered data
+                    $return_msg = "'Found.'";
+                    if($multilang){
+                        $return_msg = "Msg::getErr('found', \$lang)";
+                    }
+                    if($api){
+                        $file_string .= "\n\t\t\t\$this->returnJson(array(\"total\" => \$total_count, \$model->pluralName() => \$clean), {$return_msg}, 200);";
+                    }else{
+                        $file_string .= "\n\t\t\t\$this->renderView('example/index', array(\"total\" => \$total_count, \$model->pluralName() => \$clean));";
+                    }
+            $file_string .= "\n\t\t}";
+
+        $file_string .= "\n\t}\n";
+        return $file_string;
+    }
+
+    function createCtlViewDetailsF($ctl_name = null, $params = null, $api = false, $multilang = false, $secure = false){
+        // create suggestions for router
+        $file_string = "\n"; // separator
+
+        $identifier_string = "\$id";
+        if($secure) {$identifier_string = "\$hash";}
+
+        // create route suggestion comment
+        if($ctl_name){ $file_string .= createCtlRouterInfo($ctl_name, "Details", true, $multilang, $secure, array("GET", "HEAD", "OPTIONS")); }
+
+        // create method
+        $file_string .= "\n\tpublic function Details".CONTROLLER_ACTION_SUFFIX."(";
+        if($multilang) {$file_string .="\$lang, {$identifier_string})\n"; } else { $file_string .="{$identifier_string})\n"; }
+        $file_string .= "\t{\n";
+
+            $model_name = str_replace(CONTROLLER_SUFFIX, "", $ctl_name);
+
+            // call a model with same name
+            $file_string .= "\n\t\t\$model = new ".$model_name."();";
+            if($secure){
+                $file_string .= "\n\t\t\$model->findByHash({$identifier_string});";
+            }else{
+                $file_string .= "\n\t\t\$model->findById({$identifier_string});";
+            }
+
+            // handle errors
+            $file_string .= "\n\n\t\tif(!\$model->getId()){";
+            $file_string .= "\n\t\t\tthrow_not_found_response_error(";
+            // return error message for multi language if enabled
+            if($multilang){
+                $file_string .= "Msg::getErr('not_found', \$lang));";
+            }else{
+                $file_string .= ");";
+            }
+            $file_string .= "\n\t\t}else{";
+
+                // convert data to array or json if api enabled
+                $model_name = strtolower($model_name);
+                if($api){
+                    $file_string .= "\n\t\t\t\$res_data = \$model->prepareForJson();";
+                    if($secure){
+                        $file_string .= "\n\t\t\t//remove id from the public data";
+                        $file_string .= "\n\t\t\tunset(\$res_data->id);";
+                    }
+                    $file_string .= "\n\t\t\t\$this->returnJson(array(\"{$model_name}\" => \$res_data ));";
+                }else{
+                    $file_string .= "\n\t\t\t\$res_data = \$model->convertToPublic();";
+                    if($secure){
+                        $file_string .= "\n\t\t\t//remove id from the public data";
+                        $file_string .= "\n\t\t\tunset(\$res_data->id);";
+                    }
+                    // TODO: make sure the correct view is loaded
+                    $file_string .= "\n\t\t\t\$this->renderView('example/index', array(\"{$model_name}\" => \$res_data ));";
+                }
+            $file_string .= "\n\t\t}";
+
+        $file_string .= "\n\t}\n";
+
+        return $file_string;
+    }
+
+    function createCtlUpdateF($ctl_name = null, $params = null, $api = false, $multilang = false, $secure = false){
+        // create suggestions for router
+        $file_string = "\n"; // separator
+
+        $identifier_string = "\$id";
+        if($secure) {$identifier_string = "\$hash";}
+
+        // create route suggestion comment
+        if($ctl_name){ $file_string .= createCtlRouterInfo($ctl_name, "Update", true, $multilang, $secure, array("PUT", "PATCH", "HEAD", "OPTIONS")); }
+
+        // create method
+        $file_string .= "\n\tpublic function Update".CONTROLLER_ACTION_SUFFIX."(";
+        if($multilang) {$file_string .="\$lang, {$identifier_string})\n"; } else { $file_string .="{$identifier_string})\n"; }
+        $file_string .= "\t{\n";
+
+            $model_name = str_replace(CONTROLLER_SUFFIX, "", $ctl_name);
+
+            // call a model with same name
+            $file_string .= "\n\t\t\$model = new ".$model_name."();";
+            if($secure){
+                $file_string .= "\n\t\t\$model->findByHash({$identifier_string});";
+            }else{
+                $file_string .= "\n\t\t\$model->findById({$identifier_string});";
+            }
+
+            // handle errors
+            $file_string .= "\n\n\t\tif(!\$model->getId()){";
+            $file_string .= "\n\t\t\tthrow_not_found_response_error(";
+            // return error message for multi language if enabled
+            if($multilang){
+                $file_string .= "Msg::getErr('not_found', \$lang));";
+            }else{
+                $file_string .= ");";
+            }
+            $file_string .= "\n\t\t}else{";
+                // return response for deleted object
+                $return_msg = "'Updated.'";
+                if($multilang){
+                    $return_msg = "Msg::getMsg('updated', \$lang)";
+                }
+                if($api){
+                    $file_string .= "\n\t\t\t\$model->bindData(\$this->getJSON());";
+                    $file_string .= "\n\t\t\t\$model->update();";
+                    $file_string .= "\n\t\t\t\$this->returnJson(null, {$return_msg}, 200);";
+                }else{
+                    $file_string .= "\n\t\t\t\$model->bindData(\$this->getRequestParameters());";
+                    $file_string .= "\n\t\t\t\$model->update();";
+                    // TODO: make sure the correct view is loaded
+                    $file_string .= "\n\t\t\t// to set flash message, uncomment this: ";
+                    $file_string .= "\n\t\t\t// Security::setFlashMessage({$return_msg});";
+                    $file_string .= "\n\t\t\t\$this->renderView('example/index', array(\"message\" => {$return_msg} ));";
+                }
+
+            $file_string .= "\n\t\t}";
+
+        $file_string .= "\n\t}\n";
+        return $file_string;
+    }
+
+    function createCtlDeleteF($ctl_name = null, $params = null, $api = false, $multilang = false, $secure = false){
+        // create suggestions for router
+        $file_string = "\n"; // separator
+
+        $identifier_string = "\$id";
+        if($secure) {$identifier_string = "\$hash";}
+
+        // create route suggestion comment
+        if($ctl_name){ $file_string .= createCtlRouterInfo($ctl_name, "Delete", true, $multilang, $secure, array("DELETE", "HEAD", "OPTIONS")); }
+
+        // create method
+        $file_string .= "\n\tpublic function Delete".CONTROLLER_ACTION_SUFFIX."(";
+        if($multilang) {$file_string .="\$lang, {$identifier_string})\n"; } else { $file_string .="{$identifier_string})\n"; }
+        $file_string .= "\t{\n";
+
+            $model_name = str_replace(CONTROLLER_SUFFIX, "", $ctl_name);
+
+            // call a model with same name
+            $file_string .= "\n\t\t\$model = new ".$model_name."();";
+            if($secure){
+                $file_string .= "\n\t\t\$model->findByHash({$identifier_string});";
+            }else{
+                $file_string .= "\n\t\t\$model->findById({$identifier_string});";
+            }
+
+            // handle errors
+            $file_string .= "\n\n\t\tif(!\$model->getId()){";
+            $file_string .= "\n\t\t\tthrow_not_found_response_error(";
+            // return error message for multi language if enabled
+            if($multilang){
+                $file_string .= "Msg::getErr('not_found', \$lang));";
+            }else{
+                $file_string .= ");";
+            }
+            $file_string .= "\n\t\t}else{";
+                $file_string .= "\n\t\t\t\$model->remove();";
+
+                // return response for deleted object
+                $return_msg = "'Removed.'";
+                if($multilang){
+                    $return_msg = "Msg::getMsg('removed', \$lang)";
+                }
+                if($api){
+                    $file_string .= "\n\t\t\t\$this->returnJson(null, {$return_msg}, 200);";
+                }else{
+                    // TODO: make sure the correct view is loaded
+                    $file_string .= "\n\t\t\t// to set flash message, uncomment this: ";
+                    $file_string .= "\n\t\t\t// Security::setFlashMessage({$return_msg});";
+                    $file_string .= "\n\t\t\t\$this->renderView('example/index', array(\"message\" => {$return_msg} ));";
+                }
+            $file_string .= "\n\t\t}";
+
+        $file_string .= "\n\t}\n";
+        return $file_string;
+    }
+
+    function createCtlRouterInfo($ctl_name, $action, $routeIdentifier = true, $multilang = false, $secure = false, $methods = null){
+
+        $identifier_string = "id";
+        if($secure) {$identifier_string = "hash";}
+
+        $name = strtolower($ctl_name);
+        $function = strtolower($action);
+
+        $route_ctl_name = $ctl_name.CONTROLLER_SUFFIX;
+        $route_action_name = $action.CONTROLLER_ACTION_SUFFIX;
+
+        $file_string = "\t// Route suggestion for \"{$route_ctl_name}->{$route_action_name}\": add this to your routes array, or create your own.\n";
+
+        // this is for globals routes array;
+        $route_string = array();
+
+        // route
+        $file_string .= "\t/* ";
+        $file_string .= "\"/";
+        $route_string_key = "";
+            if($multilang) {$file_string .=":lang/"; $route_string_key .= ":lang/";}
+            $file_string .= "{$name}/";
+            $route_string_key .= "{$name}/";
+            $file_string .= "{$function}/";
+            $route_string_key .= "{$function}/";
+            if($routeIdentifier){
+                $file_string .= ":{$identifier_string}";
+                $route_string_key .= ":{$identifier_string}";
+            }
+        $file_string .="\" => array(\n";
+        $route_string_value = array();
+
+        // route properties
+        $file_string .="\t\t \"controller\" => \"{$route_ctl_name}\",\n";
+        $route_string_value["controller"] = $route_ctl_name;
+        $file_string .="\t\t \"action\" => \"{$route_action_name}";
+        $route_string_value["action"] = $route_action_name;
+
+        if($methods && $secure && FORCE_ROUTE_SECURITY == true){
+            $methods_string = "";
+            $f_chk = true;
+            foreach ($methods as $m){
+                if($f_chk){
+                    $methods_string .= "\"".strtoupper($m)."\"";
+                    $f_chk = false;
+                }else{
+                    $methods_string .= ", \"".strtoupper($m)."\"";
+                }
+            }
+            $file_string .="\",\n\t\t \"methods\" => array({$methods_string})\n";
+        }else{
+            $file_string .="\"\n";
+        }
+
+        $file_string .= "\t\t)";
+        $file_string .= " */\n";
+
+        if($methods && $secure && FORCE_ROUTE_SECURITY == true){
+            $route_string_value["methods"] = $methods;
+        }
+
+        $route_string[$route_string_key] = $route_string_value;
+        array_push($GLOBALS['routes_array'], $route_string);
+
+        // do something with global routes array, for example, put them in one file etc.
+        //print_r($GLOBALS['routes_array']);
+
+        return $file_string;
+    }
+
+#endregion
+
+#region OLDIES (for experiments only)
+
+function getDBTables(){
+    require_once 'Database.php';
+    $result = Database::doQuery('show tables;');
+    $tables = array();
+    foreach($result as $tname){
+        array_push($tables, $tname['Tables_in_'.DB_MYSQL_DATABASE]);
+    }
+    return $tables;
+}
+
+function getTableStruct($table){
+    require_once 'Database.php';
+    return Database::doQuery('describe '.$table.';');
+}
+
+function pluralNameToSingular($name){
+    if(strtolower(substr($name, -3)) == 'ies'){
+        return str_replace("ies", "y", $name);
+    }elseif(strtolower(substr($name, -3)) == 'ies'){
+        return str_replace("hes", "h", $name);
+    }else{
+        return rtrim($name, 's');
+    }
+}
+
+#endregion
+
+#region HELPER CLASSES
+
+class Colors {
+    private $foreground_colors = array();
+    private $background_colors = array();
+
+    public function __construct() {
+        // Set up shell colors
+        $this->foreground_colors['black'] = '0;30';
+        $this->foreground_colors['dark_gray'] = '1;30';
+        $this->foreground_colors['blue'] = '0;34';
+        $this->foreground_colors['light_blue'] = '1;34';
+        $this->foreground_colors['green'] = '0;32';
+        $this->foreground_colors['light_green'] = '1;32';
+        $this->foreground_colors['cyan'] = '0;36';
+        $this->foreground_colors['light_cyan'] = '1;36';
+        $this->foreground_colors['red'] = '0;31';
+        $this->foreground_colors['light_red'] = '1;31';
+        $this->foreground_colors['purple'] = '0;35';
+        $this->foreground_colors['light_purple'] = '1;35';
+        $this->foreground_colors['brown'] = '0;33';
+        $this->foreground_colors['yellow'] = '1;33';
+        $this->foreground_colors['light_gray'] = '0;37';
+        $this->foreground_colors['white'] = '1;37';
+
+        $this->background_colors['black'] = '40';
+        $this->background_colors['red'] = '41';
+        $this->background_colors['green'] = '42';
+        $this->background_colors['yellow'] = '43';
+        $this->background_colors['blue'] = '44';
+        $this->background_colors['magenta'] = '45';
+        $this->background_colors['cyan'] = '46';
+        $this->background_colors['light_gray'] = '47';
+    }
+
+    // Returns colored string
+    public function getColoredString($string, $foreground_color = null, $background_color = null) {
+        $colored_string = "";
+
+        // Check if given foreground color found
+        if (isset($this->foreground_colors[$foreground_color])) {
+            $colored_string .= "\033[" . $this->foreground_colors[$foreground_color] . "m";
+        }
+        // Check if given background color found
+        if (isset($this->background_colors[$background_color])) {
+            $colored_string .= "\033[" . $this->background_colors[$background_color] . "m";
+        }
+
+        // Add string and end coloring
+        $colored_string .=  $string . "\033[0m";
+
+        return $colored_string;
+    }
+
+    // Returns all foreground color names
+    public function getForegroundColors() {
+        return array_keys($this->foreground_colors);
+    }
+
+    // Returns all background color names
+    public function getBackgroundColors() {
+        return array_keys($this->background_colors);
+    }
+}
+
+class CSSMin {
+    private $original_css;
+    private $compressed_css;
+    private $files;
+
+    /* Constructor for CSSMin class */
+    public function __construct() {
+        $this->original_css = "";
+        $this->compressed_css = "";
+        $this->files = array();
+    }
+
+    /* Add file as string (path and filename) */
+    public function addFile($file = null) {
+        if ($file != null && $file != "" &&
+            substr(strrchr($file, '.'), 1) == "css" && is_file($file)) {
+            $this->files[] = $file;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    /* Add multiple files array */
+    public function addFiles($files = null) {
+        if ($files != null && is_array($files)) {
+            $ok = true;
+            foreach ($files as $file) {
+                $ok = $this->addFile($file);
+            }
+            return $ok;
+        }
+        else {
+            return false;
+        }
+    }
+
+    /* Print original css files concatenated */
+    public function printOriginalCSS($header = false) {
+        if ($header) {
+            header('Content-type: text/css');
+        }
+        echo $this->original_css;
+    }
+
+    /* Print compressed css files concatenated */
+    public function printCompressedCSS($header = false) {
+        if ($header) {
+            header('Content-type: text/css');
+        }
+        echo $this->compressed_css;
+    }
+
+    public function getCompressedCssString(){
+        return $this->compressed_css;
+    }
+
+    /* Sets original css loop thru all added files */
+    public function setOriginalCSS() {
+        foreach ($this->files as $file) {
+            $fh = fopen($file, 'r');
+            $this->original_css .= fread($fh, filesize($file));
+            fclose($fh);
+        }
+    }
+
+    /* Make simple compression with regexp. */
+    public function compressCSS() {
+        $patterns = array();
+        $replacements = array();
+
+        /* remove multiline comments */
+        $patterns[] = '/\/\*.*?\*\//s';
+        $replacements[] = '';
+
+        /* remove tabs, spaces, newlines, etc. */
+        $patterns[] = '/\r\n|\r|\n|\t|\s\s+/';
+        $replacements[] = '';
+
+        /* remove whitespace on both sides of colons :*/
+        $patterns[] = '/\s?\:\s?/';
+        $replacements[] = ':';
+
+        /* remove whitespace on both sides of curly brackets {} */
+        $patterns[] = '/\s?\{\s?/';
+        $replacements[] = '{';
+        $patterns[] = '/\s?\}\s?/';
+        $replacements[] = '}';
+
+        /* remove whitespace on both sides of commas , */
+        $patterns[] = '/\s?\,\s?/';
+        $replacements[] = ',';
+
+        /* compress */
+        $this->compressed_css = preg_replace($patterns, $replacements, $this->original_css);
+    }
+}
+
+#end region
