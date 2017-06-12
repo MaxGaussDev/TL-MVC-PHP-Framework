@@ -2,6 +2,7 @@
 
 class Controller
 {
+
     // load model
     // depricated, but still works for older versions
 	protected function loadModel($model)
@@ -145,6 +146,5 @@ class Controller
         }
         echo json_encode($response_data);
     }
-
 
 }
