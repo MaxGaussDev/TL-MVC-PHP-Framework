@@ -27,7 +27,8 @@ Class Router
     );
 
     public function resolveRoute($route_string){
-        
+
+        $this->checkForRoutesFile();
         // first we check the simple routes without parameters
         $key_chk = '/'.$route_string;
         if(isset($this->routes[$key_chk])){
@@ -90,5 +91,13 @@ Class Router
         }
     }
 
+    private function checkForRoutesFile($type = 'php'){
+        if(file_exists(__DIR__.'/_routes.'.$type)){
+            if($type == 'php'){
+                require_once __DIR__.'/_routes.'.$type;
+                $this->routes = array_merge($this->routes, _routes::$routes);
+            }
+        }
+    }
 }
 

@@ -1,6 +1,7 @@
 <?php
 
 require_once 'Config.php';
+require_once 'Ralph.php';
 
 #region SETUP
 
@@ -183,6 +184,8 @@ function ctrlCmd($del = null, $args = null){
             displayErrorMsg("Error: 'create:controller' command expects arguments!");
             break;
     }
+
+    createRoutesFile();
 }
 
 function compressCssCmd($del = null, $args = null){
@@ -920,6 +923,107 @@ function versionCmd(){
         return $file_string;
     }
 
+    function createRoutesFile($storage_type = null){
+
+        // this will create _routes.json file, and serialized string file
+        // still an experiment
+
+        // this should be used by the Router class in the future for auto-generated routes
+        // check if the file exists, add new routes to the existing ones, or create new file
+        // TODO: maybe check PHP version? after php 7.0.15 serializer is faster than json
+
+        if($storage_type == 'json'){
+            storeRoutesJson();
+        }elseif($storage_type == 'serialize'){
+            storeRoutesSerialized();
+        }else{
+            // do both
+            //storeRoutesJson();
+            //storeRoutesSerialized();
+            storeRoutesPHP();
+        }
+    }
+
+    function storeRoutesJson(){
+        // store routes as json
+        $filename_json = '_routes.json';
+        $path = __DIR__."/{$filename_json}";
+        if(!file_exists($path)){
+            $content = json_encode($GLOBALS['routes_array']);
+            $fp = fopen($path,"wb");
+            fwrite($fp,$content);
+            fclose($fp);
+        }else{
+            $content = json_decode(file_get_contents($path));
+            if(is_array($content)){
+                foreach ($GLOBALS['routes_array'] as $route){
+                    array_push($content, $route);
+                }
+                $fp = fopen($path,"w+");
+                fwrite($fp,json_encode($content));
+                fclose($fp);
+            }
+        }
+    }
+
+    function storeRoutesSerialized(){
+        // store routes as serialized string
+        $filename_serialized = '_routes.serial';
+        $path = __DIR__."/{$filename_serialized}";
+        if(!file_exists($path)){
+            $content = serialize($GLOBALS['routes_array']);
+            $fp = fopen($path,"wb");
+            fwrite($fp,$content);
+            fclose($fp);
+        }else{
+            $content = unserialize(file_get_contents($path));
+            if(is_array($content)){
+                foreach ($GLOBALS['routes_array'] as $route){
+                    array_push($content, $route);
+                }
+                $fp = fopen($path,"w+");
+                fwrite($fp,serialize($content));
+                fclose($fp);
+            }
+        }
+    }
+
+    function storeRoutesPHP(){
+        // store routes as serialized string
+        $filename_php = '_routes.php';
+        $path = __DIR__."/{$filename_php}";
+
+        $file_string = "<?php\n\nclass _routes\n{\n";
+        $file_string .= "\tpublic static \$routes = array(\n\n";
+
+        if(!file_exists($path)){
+            $file_string .= createPHPArray($GLOBALS['routes_array']);
+            $file_string .= "\n\t);";
+            $file_string .= "\n}\n";
+            $fp = fopen($path,"wb");
+            fwrite($fp,$file_string);
+            fclose($fp);
+        }else{
+            require_once $path;
+            $content = _routes::$routes;
+            if(is_array($content)){
+                foreach ($content as $key => $val){
+                    if(in_array(array($key => $val), $GLOBALS['routes_array'])){
+                        print "SKIPPING DUPLICATE ROUTE: {$key}\n";
+                    }else{
+                        array_push($GLOBALS['routes_array'], array($key => $val));
+                    }
+                }
+                $file_string .= createPHPArray($GLOBALS['routes_array']);
+                $file_string .= "\n\t);";
+                $file_string .= "\n}\n";
+                $fp = fopen($path,"w+");
+                fwrite($fp,$file_string);
+                fclose($fp);
+            }
+        }
+    }
+
 #endregion
 
 #region OLDIES (for experiments only)
@@ -947,6 +1051,67 @@ function pluralNameToSingular($name){
     }else{
         return rtrim($name, 's');
     }
+}
+
+function createPHPArray($array){
+    $string = "";
+    $lp = end($array);
+    foreach ($array as $param){
+        foreach ($param as $k => $v){
+                if(Ralph::containsPrefix($k, '/')){
+                    //preset routes already have / at the beginning
+                    $string .= "\t\t\t\"{$k}\" => array(\n";
+                }else{
+                    $string .= "\t\t\t\"/{$k}\" => array(\n";
+                }
+                $lel = end($v);
+                foreach ($v as $ki => $val){
+                    if(!is_array($val)){
+                        if($val == $lel){
+                            $string .= "\t\t\t\t\"{$ki}\" => \"{$val}\"\n";
+                        }else{
+                            $string .= "\t\t\t\t\"{$ki}\" => \"{$val}\",\n";
+                        }
+                    }else{
+                        if($ki == 'methods'){
+                            $methods_list = "array(";
+                            $l = end($val);
+                            foreach ($val as $m){
+                                if($m == $l){
+                                    $methods_list .= "\"$m\"";
+                                }else{
+                                    $methods_list .= "\"$m\", ";
+                                }
+                            }
+                            $methods_list .= ")";
+                            if($val == $lel){
+                                $string .= "\t\t\t\t\"{$ki}\" => {$methods_list}\n";
+                            }else{
+                                $string .= "\t\t\t\t\"{$ki}\" => {$methods_list},\n";
+                            }
+                        }
+                        if($ki == 'roles'){
+                            $roles_list = "array(";
+                            foreach ($val as $r){
+                                $roles_list .= "\"$r\", ";
+                            }
+                            $roles_list .= ")";
+                            if($val == $lel){
+                                $string .= "\t\t\t\t\"{$ki}\" => {$roles_list}\n";
+                            }else{
+                                $string .= "\t\t\t\t\"{$ki}\" => {$roles_list},\n";
+                            }
+                        }
+                    }
+                }
+                if($param == $lp){
+                    $string .= "\t\t\t)\n";
+                }else{
+                    $string .= "\t\t\t),\n";
+                }
+        }
+    }
+    return $string;
 }
 
 #endregion

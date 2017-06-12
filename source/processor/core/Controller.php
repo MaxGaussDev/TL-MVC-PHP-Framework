@@ -71,6 +71,25 @@ class Controller
         }
     }
 
+    // get post parameters only
+    protected function getPost(){
+
+	    $data = array();
+
+        foreach($_POST as $key => $value){
+            // do some security stuff here for request params
+            if(!empty($_POST[$key])){
+                if(strtolower($key) != 'email'){
+                    $data[$key] = urlencode($value);
+                }else{
+                    $data[$key] = $value;
+                }
+            }
+        }
+
+        return (object)$data;
+    }
+
     // get request parameters (still in experimental phase)
     protected function getRequestParameters()
     {
@@ -126,5 +145,6 @@ class Controller
         }
         echo json_encode($response_data);
     }
+
 
 }
