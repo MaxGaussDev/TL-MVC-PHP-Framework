@@ -48,7 +48,7 @@ define('DB_MYSQL_HOST', '127.0.0.1');
 define('DB_MYSQL_PORT', 3306);
 define('DB_MYSQL_USER', 'root');
 define('DB_MYSQL_PASSWORD', 'root');
-define('DB_MYSQL_DATABASE', 'mvc_test');
+define('DB_MYSQL_DATABASE', 'test_mvc');
 
 // force soft delete in database models
 define('DB_MYSQL_FORCE_SOFT_DELETE', false);
@@ -60,3 +60,4 @@ define('AUTORESOLVE_PLURAL_NAMES', true);
 
 // allow undersocres in DB table names, disabled by default for ORM
 define('ALLOW_UNDERSCORES_IN_TABLE_NAMES', false);
+

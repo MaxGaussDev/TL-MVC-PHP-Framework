@@ -99,5 +99,11 @@ Class Router
             }
         }
     }
+
+    public function getAllRoutes()
+    {
+        $this->checkForRoutesFile();
+        return $this->routes;
+    }
 }
 
