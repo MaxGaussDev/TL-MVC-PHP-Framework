@@ -140,13 +140,13 @@ class Ralph
         $data2 = Ralph::objToArray($data2);
 
         $data = Ralph::compareArrays($data1, $data2);
-        $array = Ralph::cleanEmptyArrayElemets($data);
+        $array = Ralph::cleanEmptyArrayElements($data);
 
         return json_encode($array);
     }
 
     // removes empty elements from an array
-    public static function cleanEmptyArrayElemets($data){
+    public static function cleanEmptyArrayElements($data){
 
         $array = array_map('array_filter', $data);
         $array = array_filter($array);
