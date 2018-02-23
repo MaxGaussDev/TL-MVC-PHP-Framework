@@ -25,17 +25,4 @@ class DefaultController extends Controller
         //$this->returnJson(array("value" => "You are now ready to drink the blood of infants."));
 
     }
-
-    public function TestAction()
-    {
-       //echo "test action in the default controller";
-       //print_r($this->getRequestParameters());die();
-    }
-
-    public function AnotherAction($username, $age)
-    {
-        echo "Username: {$username} <br>";
-        echo "Age: {$age} <br>";
-    }
-
 }

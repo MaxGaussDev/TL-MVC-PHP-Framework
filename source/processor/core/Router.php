@@ -15,14 +15,6 @@ Class Router
         "/" => array(
             "controller" => "DefaultController",
             "action" => "IndexAction"
-        ),
-        "/test" => array(
-            "controller" => "DefaultController",
-            "action" => "TestAction"
-        ),
-        "/test/with/:username/:age" => array(
-            "controller" => "DefaultController",
-            "action" => "AnotherAction"
         )
     );
 

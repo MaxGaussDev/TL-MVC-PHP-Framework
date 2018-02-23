@@ -17,6 +17,7 @@ R::setup('mysql:host='.DB_MYSQL_HOST.':'.DB_MYSQL_PORT.';dbname='.DB_MYSQL_DATAB
 if(ALLOW_UNDERSCORES_IN_TABLE_NAMES == true) {
     // in case we need to use underscores in table names
     // this is restricted by the ORM, it uses _ for table relations
+    // see core/Config.php ALLOW_UNDERSCORES_IN_TABLE_NAMES
     R::setStrictTyping(false);
 }
 
